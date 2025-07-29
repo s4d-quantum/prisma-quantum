@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         }
       });
       
-      const matchingTacs = tacRecords.map(tac => tac.item_tac);
+      const matchingTacs = tacRecords.map((tac: any) => tac.item_tac);
       
       where.OR = [
         { item_imei: { contains: search } },
@@ -73,36 +73,43 @@ export async function GET(request: NextRequest) {
     let totalCount = 0;
     
     if (supplier) {
-      // When filtering by supplier, we need to find IMEI items linked to purchases from this supplier
-      // First, get all purchases from this supplier
+      // When filtering by supplier, get all item_imei from tbl_purchases for this supplier
+      // Then filter tbl_imei records by those IMEIs
       const supplierPurchases = await prisma.tbl_purchases.findMany({
         where: {
           supplier_id: supplier
         },
         select: {
-          id: true
+          item_imei: true
         }
       });
       
-      const supplierPurchaseIds = supplierPurchases.map(p => p.id);
+      const supplierImeis = supplierPurchases
+        .map((p: any) => p.item_imei)
+        .filter((imei: any) => imei !== null && imei !== ''); // Filter out null/empty IMEIs
       
-      // Then, get IMEI items that have these purchase IDs
-      const supplierWhere = {
-        ...where,
-        purchase_id: {
-          in: supplierPurchaseIds
-        }
-      };
-      
-      [imeiItems, totalCount] = await Promise.all([
-        prisma.tbl_imei.findMany({
-          where: supplierWhere,
-          skip,
-          take: limit,
-          orderBy: { created_at: 'desc' }
-        }),
-        prisma.tbl_imei.count({ where: supplierWhere })
-      ]);
+      if (supplierImeis.length === 0) {
+        // No IMEIs found for this supplier, return empty result
+        [imeiItems, totalCount] = [[], 0];
+      } else {
+        // Add supplier IMEI filter to existing where clause
+        const supplierWhere = {
+          ...where,
+          item_imei: {
+            in: supplierImeis
+          }
+        };
+        
+        [imeiItems, totalCount] = await Promise.all([
+          prisma.tbl_imei.findMany({
+            where: supplierWhere,
+            skip,
+            take: limit,
+            orderBy: { created_at: 'desc' }
+          }),
+          prisma.tbl_imei.count({ where: supplierWhere })
+        ]);
+      }
     } else {
       // Normal query without supplier filter
       [imeiItems, totalCount] = await Promise.all([
@@ -152,10 +159,10 @@ export async function GET(request: NextRequest) {
 
         // Get supplier information
         let supplier = null;
-        if (item.purchase_id) {
-          // Get the purchase record
-          const purchaseRecord = await prisma.tbl_purchases.findUnique({
-            where: { id: item.purchase_id },
+        if (item.item_imei) {
+          // Find the purchase record by IMEI to get supplier
+          const purchaseRecord = await prisma.tbl_purchases.findFirst({
+            where: { item_imei: item.item_imei },
             select: { supplier_id: true }
           });
           
