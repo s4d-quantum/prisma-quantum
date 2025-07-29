@@ -1,0 +1,610 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model tbl_imei {
+  id             Int       @id @default(autoincrement())
+  item_imei      String?   @db.VarChar(100)
+  item_tac       String?   @db.VarChar(100)
+  item_color     String?   @db.VarChar(100)
+  item_grade     Int?      @default(0)
+  item_gb        String?   @db.VarChar(100)
+  purchase_id    Int?
+  status         Int?
+  unit_confirmed Int?
+  created_at     DateTime? @db.DateTime(0)
+
+  @@index([id], map: "id")
+  @@index([item_imei, item_tac, status], map: "idx_imei_basic")
+  @@index([status, item_tac, item_imei], map: "idx_imei_status_tac_imei")
+  @@index([item_tac, purchase_id, status], map: "idx_imei_tac_purchase_status")
+  @@index([item_imei, item_tac, purchase_id, status], map: "item_imei")
+}
+
+model tbl_serial_products {
+  id           Int     @id @default(autoincrement())
+  purchase_id  Int?
+  item_code    String? @db.VarChar(100)
+  item_grade   Int?
+  item_brand   String? @db.VarChar(100)
+  item_details String? @db.VarChar(1000)
+  status       Int?
+
+  @@index([purchase_id, item_code, item_brand, status], map: "purchase_id")
+}
+
+model tbl_accessories_products {
+  id         Int     @id @default(autoincrement())
+  title      String? @db.VarChar(100)
+  item_brand String? @db.VarChar(100)
+  item_qty   Int?
+}
+
+model tbl_parts_products {
+  id         Int     @id @default(autoincrement())
+  title      String? @db.VarChar(100)
+  item_brand String? @db.VarChar(100)
+  item_model String? @db.VarChar(100)
+  item_qty   Int?
+  item_color String? @db.VarChar(100)
+  item_tac   String? @db.Text
+}
+
+model tbl_categories {
+  id          Int     @id @default(autoincrement())
+  title       String? @db.VarChar(100)
+  category_id String? @db.VarChar(100)
+  user_id     Int?
+
+  @@index([id], map: "id")
+  @@index([category_id], map: "idx_categories_category_id")
+}
+
+model tbl_subcategories {
+  id             Int     @id @default(autoincrement())
+  subcategory_id String? @db.VarChar(100)
+  title          String? @db.VarChar(100)
+  category_id    String? @db.VarChar(100)
+  user_id        Int?
+}
+
+model tbl_purchases {
+  id               Int      @id @default(autoincrement())
+  purchase_id      Int
+  item_imei        String?  @db.VarChar(100)
+  date             DateTime @db.Date
+  supplier_id      String   @db.VarChar(10)
+  tray_id          String?  @db.VarChar(100)
+  qc_required      Int?
+  qc_completed     Int?
+  repair_required  Int?
+  repair_completed Int?
+  purchase_return  Int?
+  priority         Int?
+  user_id          Int?
+  report_comment   String?  @db.VarChar(500)
+  po_ref           String?  @db.VarChar(50)
+  has_return_tag   Int?
+  unit_confirmed   Int?
+
+  @@index([priority, purchase_id, date], map: "idx_priority_purchaseid_date")
+  @@index([purchase_id], map: "idx_purchase_id")
+  @@index([purchase_id, priority, date], map: "idx_purchaseid_priority_date")
+  @@index([date, purchase_id], map: "idx_purchases_date_id")
+  @@index([item_imei, supplier_id, purchase_return, qc_required, qc_completed, purchase_id], map: "idx_purchases_full")
+  @@index([item_imei, supplier_id, purchase_return, qc_required, qc_completed], map: "idx_purchases_imei_supplier_opt")
+  @@index([qc_required, repair_required, repair_completed, supplier_id, purchase_id, id], map: "idx_purchases_qc_repair_combo")
+  @@index([qc_required, supplier_id, purchase_id], map: "idx_purchases_qc_supplier")
+  @@index([supplier_id, date, purchase_id], map: "idx_purchases_supplier_date")
+  @@index([supplier_id, purchase_id], map: "idx_purchases_supplier_simple")
+  @@index([qc_required, qc_completed, purchase_id], map: "idx_qc_required_completed")
+  @@index([repair_required, purchase_id, id], map: "idx_repair_purchase_id")
+  @@index([purchase_id, item_imei, supplier_id, qc_required, qc_completed, purchase_return, user_id], map: "purchase_id")
+}
+
+model tbl_serial_purchases {
+  id              Int       @id @default(autoincrement())
+  purchase_id     Int?
+  item_code       String?   @db.VarChar(100)
+  date            DateTime? @db.Date
+  supplier_id     String?   @db.VarChar(100)
+  tray_id         String?   @db.VarChar(100)
+  qc_required     Int?
+  qc_completed    Int?
+  purchase_return Int?
+  user_id         Int?
+  report_comment  String?   @db.VarChar(500)
+  priority        Int?
+  po_ref          String?   @db.VarChar(50)
+  has_return_tag  Int?
+  unit_confirmed  Int?
+
+  @@index([purchase_id, item_code, supplier_id, qc_required, qc_completed, purchase_return, user_id], map: "purchase_id")
+}
+
+model tbl_accessories_purchases {
+  id             Int       @id @default(autoincrement())
+  purchase_id    Int?
+  date           DateTime? @db.Date
+  product_id     Int?
+  item_qty       Int?
+  supplier_id    String?   @db.VarChar(100)
+  user_id        Int?
+  tray_id        String?   @db.VarChar(100)
+  report_comment String?   @db.VarChar(500)
+  po_ref         String?   @db.VarChar(50)
+}
+
+model tbl_parts_purchases {
+  id             Int       @id @default(autoincrement())
+  purchase_id    Int?
+  date           DateTime? @db.Date
+  product_id     Int?
+  item_qty       Int?
+  supplier_id    String?   @db.VarChar(100)
+  user_id        Int?
+  tray_id        String?   @db.VarChar(100)
+  report_comment String?   @db.VarChar(500)
+  po_ref         String?   @db.VarChar(50)
+}
+
+model tbl_purchase_return {
+  id               Int     @id @default(autoincrement())
+  return_id        Int?
+  item_imei        String? @db.VarChar(100)
+  date             String? @db.VarChar(100)
+  purchase_id      Int?
+  user_id          Int?
+  report_comment   String? @db.VarChar(500)
+  tracking_no      String? @db.VarChar(50)
+  delivery_company String? @db.VarChar(100)
+  is_delivered     Int?
+
+  @@index([return_id, item_imei, purchase_id], map: "return_id")
+}
+
+model tbl_serial_purchase_return {
+  id             Int       @id @default(autoincrement())
+  date           DateTime? @db.Date
+  item_code      String?   @db.VarChar(100)
+  return_id      Int?
+  purchase_id    Int?
+  user_id        Int?
+  report_comment String?   @db.VarChar(500)
+}
+
+model tbl_accessories_purchase_return {
+  id             Int       @id @default(autoincrement())
+  date           DateTime? @db.Date
+  purchase_id    Int?
+  item_qty       Int?
+  product_id     Int?
+  return_id      Int?
+  user_id        Int?
+  report_comment String?   @db.VarChar(500)
+}
+
+model tbl_parts_purchase_return {
+  id             Int       @id @default(autoincrement())
+  date           DateTime? @db.Date
+  purchase_id    Int?
+  item_qty       Int?
+  product_id     Int?
+  return_id      Int?
+  user_id        Int?
+  report_comment String?   @db.VarChar(500)
+}
+
+model tbl_orders {
+  id               Int      @id @default(autoincrement())
+  order_id         Int
+  item_imei        String?  @db.VarChar(100)
+  customer_id      String   @db.VarChar(100)
+  date             DateTime @db.Date
+  po_box           String?  @db.VarChar(100)
+  tracking_no      String?  @db.VarChar(50)
+  customer_ref     String?  @db.VarChar(100)
+  delivery_company String?  @db.VarChar(100)
+  total_boxes      Int?
+  total_pallets    Int?
+  order_return     Int?
+  user_id          Int?
+  unit_confirmed   Int?
+  has_return_tag   Int?
+  is_delivered     Int?
+
+  @@index([customer_id], map: "customer_id")
+  @@index([order_id, order_return], map: "idx_orders_order_id_return")
+  @@index([item_imei], map: "item_imei")
+  @@index([order_id], map: "order_id")
+  @@index([order_return, user_id], map: "order_return")
+}
+
+model tbl_serial_orders {
+  id               Int       @id @default(autoincrement())
+  order_id         Int?
+  item_code        String?   @db.VarChar(100)
+  customer_id      String?   @db.VarChar(100)
+  date             DateTime? @db.Date
+  po_box           String?   @db.VarChar(100)
+  delivery_company String?   @db.VarChar(100)
+  total_boxes      Int?
+  total_pallets    Int?
+  order_return     Int?
+  user_id          Int?
+  unit_confirmed   Int?
+  has_return_tag   Int?
+  is_delivered     Int?
+
+  @@index([customer_id], map: "customer_id")
+  @@index([item_code, order_return], map: "item_code")
+  @@index([order_id], map: "order_id")
+}
+
+model tbl_accessories_orders {
+  id               Int       @id @default(autoincrement())
+  order_id         Int?
+  product_id       Int?
+  item_qty         Int?
+  customer_id      String?   @db.VarChar(100)
+  date             DateTime? @db.Date
+  user_id          Int?
+  po_box           String?   @db.VarChar(10)
+  delivery_company String?   @db.VarChar(50)
+  total_pallets    Int?
+  total_boxes      Int?
+
+  @@index([order_id, product_id, item_qty, customer_id, user_id], map: "order_id")
+}
+
+model tbl_parts_orders {
+  id          Int       @id @default(autoincrement())
+  order_id    Int?
+  product_id  Int?
+  item_qty    Int?
+  customer_id String?   @db.VarChar(100)
+  date        DateTime? @db.Date
+  user_id     Int?
+  linked_pid  String?   @db.VarChar(10)
+
+  @@index([order_id, product_id, item_qty, customer_id, user_id], map: "order_id")
+}
+
+model tbl_order_return {
+  id        Int      @id @default(autoincrement())
+  return_id Int?
+  item_imei String?  @db.VarChar(100)
+  order_id  Int?
+  date      DateTime @db.Date
+  user_id   Int?
+}
+
+model tbl_serial_order_return {
+  id        Int       @id @default(autoincrement())
+  date      DateTime? @db.Date
+  return_id Int?
+  item_code String?   @db.VarChar(100)
+  order_id  Int?
+  user_id   Int?
+}
+
+model tbl_accessories_order_return {
+  id         Int       @id @default(autoincrement())
+  return_id  Int?
+  product_id Int?
+  item_qty   Int?
+  date       DateTime? @db.Date
+  order_id   Int?
+  user_id    Int?
+}
+
+model tbl_parts_order_return {
+  id         Int       @id @default(autoincrement())
+  return_id  Int?
+  product_id Int?
+  item_qty   Int?
+  date       DateTime? @db.Date
+  order_id   Int?
+  user_id    Int?
+}
+
+model tbl_qc_imei_products {
+  id                     Int     @id @default(autoincrement())
+  purchase_id            Int?
+  item_code              String? @db.VarChar(100)
+  item_comments          String? @db.VarChar(1000)
+  item_cosmetic_passed   Int?
+  item_functional_passed Int?
+  item_flashed           Int?
+  user_id                Int?
+  item_eu                String? @db.VarChar(100)
+
+  @@index([item_code, purchase_id, item_cosmetic_passed, item_functional_passed], map: "idx_qc_check")
+  @@index([item_code, item_comments(length: 767), item_cosmetic_passed, item_functional_passed, item_flashed, user_id], map: "item_code")
+}
+
+model tbl_qc_serial_products {
+  id                     Int     @id @default(autoincrement())
+  purchase_id            Int?
+  item_code              String? @db.VarChar(100)
+  item_comments          String? @db.VarChar(1000)
+  item_cosmetic_passed   Int?
+  item_functional_passed Int?
+  item_flashed           Int?
+  user_id                Int?
+  item_eu                String? @db.VarChar(100)
+
+  @@index([purchase_id, item_code, item_comments(length: 767), item_cosmetic_passed, item_functional_passed, item_flashed, user_id], map: "purchase_id")
+}
+
+model tbl_repair_imei_products {
+  id            Int     @id @default(autoincrement())
+  purchase_id   String? @db.VarChar(10)
+  item_code     String? @db.VarChar(50)
+  item_comments String? @db.VarChar(100)
+  user_id       String? @db.VarChar(10)
+
+  @@index([item_comments], map: "item_comments")
+  @@index([purchase_id, item_code], map: "purchase_id")
+}
+
+model tbl_repair_imei_parts {
+  id          Int     @id @default(autoincrement())
+  item_code   String? @db.VarChar(50)
+  purchase_id Int?
+  part_id     Int?
+  part_qty    Int?
+  user_id     Int?
+
+  @@index([item_code, purchase_id, part_id], map: "item_code")
+}
+
+model tbl_imei_sales_orders {
+  id                Int       @id @default(autoincrement())
+  order_id          Int?
+  customer_id       String?   @db.VarChar(10)
+  item_brand        String?   @db.VarChar(100)
+  item_details      String?   @db.VarChar(100)
+  item_color        String?   @db.VarChar(100)
+  item_grade        String?   @db.VarChar(10)
+  item_gb           String?   @db.VarChar(10)
+  date              DateTime? @db.DateTime(0)
+  user_id           Int?
+  tray_id           String?   @db.VarChar(100)
+  is_completed      Int?
+  item_code         String?   @db.VarChar(100)
+  goodsout_order_id Int?
+  po_ref            String?   @db.VarChar(100)
+  customer_ref      String?   @db.VarChar(100)
+  supplier_id       String?   @db.VarChar(10)
+
+  @@index([item_code, is_completed], map: "idx_imei_sales_orders_code_complete")
+  @@index([order_id], map: "idx_imei_sales_orders_order_id")
+}
+
+model tbl_serial_sales_orders {
+  id                Int       @id @default(autoincrement())
+  order_id          Int?
+  customer_id       String?   @db.VarChar(10)
+  item_brand        String?   @db.VarChar(100)
+  item_details      String?   @db.VarChar(100)
+  item_color        String?   @db.VarChar(100)
+  item_grade        String?   @db.VarChar(10)
+  item_gb           Int?
+  date              DateTime? @db.Date
+  user_id           Int?
+  tray_id           String?   @db.VarChar(100)
+  is_completed      Int?
+  item_code         String?   @db.VarChar(100)
+  goodsout_order_id Int?
+  po_ref            String?   @db.VarChar(100)
+  supplier_id       String?   @db.VarChar(10)
+}
+
+model tbl_customers {
+  id          Int     @id @default(autoincrement())
+  customer_id String? @db.VarChar(100)
+  name        String? @db.VarChar(100)
+  address     String? @db.VarChar(100)
+  phone       String? @db.VarChar(100)
+  email       String? @db.VarChar(100)
+  city        String? @db.VarChar(100)
+  country     String? @db.VarChar(100)
+  user_id     Int?
+  address2    String? @db.VarChar(100)
+  postcode    String? @db.VarChar(10)
+  vat         String? @db.VarChar(50)
+}
+
+model tbl_suppliers {
+  id          Int     @id @default(autoincrement())
+  supplier_id String? @db.VarChar(100)
+  name        String? @db.VarChar(100)
+  address     String? @db.VarChar(100)
+  phone       String? @db.VarChar(100)
+  email       String? @db.VarChar(100)
+  city        String? @db.VarChar(100)
+  country     String? @db.VarChar(100)
+  user_id     Int?
+  address2    String? @db.VarChar(100)
+  postcode    String? @db.VarChar(10)
+  vat         String? @db.VarChar(50)
+}
+
+model tbl_settings {
+  id                      Int     @id @default(autoincrement())
+  dpd_user                String? @db.VarChar(50)
+  dpd_pass                String? @db.VarChar(100)
+  email                   String? @db.VarChar(100)
+  company_title           String? @db.VarChar(100)
+  logo_image              String? @db.VarChar(200)
+  postcode                String? @db.VarChar(20)
+  phone                   String? @db.VarChar(20)
+  vat                     String? @db.VarChar(30)
+  eroi_no                 String? @db.VarChar(30)
+  company_registration_no String? @db.VarChar(30)
+  address                 String? @db.VarChar(100)
+  city                    String? @db.VarChar(30)
+  country                 String? @db.VarChar(20)
+}
+
+model tbl_grades {
+  grade_id Int     @id
+  title    String? @db.VarChar(100)
+}
+
+model tbl_trays {
+  id      Int     @id @default(autoincrement())
+  tray_id String? @db.VarChar(100)
+  title   String? @db.VarChar(100)
+  user_id Int?
+}
+
+model tbl_tac {
+  item_tac     String? @db.VarChar(100)
+  item_details String? @db.VarChar(100)
+  id           Int     @id @default(autoincrement())
+  item_brand   String? @db.VarChar(100)
+  item_gb1     Int?
+  item_color1  String? @db.VarChar(100)
+
+  @@index([item_brand, item_tac], map: "idx_tac_brand_tac")
+  @@index([item_tac, item_brand], map: "idx_tac_tac_brand")
+  @@index([item_tac, item_details, item_brand], map: "item_tac")
+}
+
+model tbl_flash_descriptions {
+  id      Int     @id @default(autoincrement())
+  desc_id Int?
+  title   String? @db.VarChar(100)
+}
+
+model tbl_accounts {
+  id            Int      @id @default(autoincrement())
+  user_name     String?  @db.VarChar(100)
+  user_email    String?  @unique @db.VarChar(100)
+  user_password String   @db.VarChar(255)
+  user_role     String?  @db.VarChar(50)
+  created_at    DateTime? @default(now())
+}
+
+model tbl_log {
+  id        Int       @id @default(autoincrement())
+  date      DateTime? @db.Date
+  item_code String?   @db.VarChar(100)
+  subject   String?   @db.VarChar(100)
+  details   String?   @db.VarChar(100)
+  ref       String?   @db.VarChar(100)
+  auto_time DateTime? @default(now()) @db.DateTime(0)
+  user_id   Int?
+
+  @@index([date], map: "idx_date")
+  @@index([id], map: "idx_id")
+  @@index([item_code, id], map: "idx_item_code_id")
+}
+
+model dpd_status {
+  order_id      Int     @id
+  tracking_no   String? @db.VarChar(255)
+  parcel_status String? @db.VarChar(255)
+}
+
+model level3_repair {
+  id             Int       @id @default(autoincrement())
+  date           DateTime  @db.Date
+  manufacturer   String?   @db.VarChar(100)
+  model          String?   @db.VarChar(100)
+  item_imei      BigInt?
+  fault          String?   @db.Text
+  engineer_notes String?   @db.Text
+  status         String?   @db.VarChar(50)
+  tray_id        String?   @db.VarChar(50)
+  updated_at     DateTime? @default(now()) @db.DateTime(0)
+}
+
+model tbl_accounts_14_7_23 {
+  id            Int     @id @default(autoincrement())
+  user_id       Int
+  user_name     String? @db.VarChar(100)
+  user_email    String? @unique(map: "user_email") @db.VarChar(100)
+  user_password String? @db.VarChar(100)
+  user_phone    String? @db.VarChar(100)
+  user_role     String? @db.VarChar(100)
+
+  @@unique([user_id, user_email], map: "user_id")
+  @@map("tbl_accounts_14-7-23")
+}
+
+model tbl_accounts_old {
+  user_id       Int     @id
+  user_name     String? @db.VarChar(100)
+  user_email    String? @db.VarChar(100)
+  user_password String? @db.VarChar(100)
+  user_phone    String? @db.VarChar(100)
+  user_role     String? @db.VarChar(100)
+}
+
+model tbl_gb {
+  id       Int     @id @default(autoincrement())
+  gb_value String? @db.VarChar(10)
+}
+
+model tbl_log20_7_2023_user_id_shuffled_ {
+  id        Int       @id @default(autoincrement())
+  date      DateTime? @db.Date
+  item_code String?   @db.VarChar(100)
+  subject   String?   @db.VarChar(100)
+  details   String?   @db.VarChar(100)
+  ref       String?   @db.VarChar(100)
+  auto_time DateTime? @default(now()) @db.DateTime(0)
+  user_id   Int?
+
+  @@index([date], map: "idx_date")
+  @@index([id], map: "idx_id")
+  @@map("tbl_log20-7-2023(user_id shuffled)")
+}
+
+model tbl_log_010125 {
+  id        Int       @id @default(autoincrement())
+  date      DateTime? @db.Date
+  item_code String?   @db.VarChar(100)
+  subject   String?   @db.VarChar(100)
+  details   String?   @db.VarChar(100)
+  ref       String?   @db.VarChar(100)
+  auto_time DateTime? @default(now()) @db.DateTime(0)
+  user_id   Int?
+}
+
+model tbl_log_17_7_23 {
+  id        Int       @id @default(autoincrement())
+  date      DateTime? @db.Date
+  item_code String?   @db.VarChar(100)
+  subject   String?   @db.VarChar(100)
+  details   String?   @db.VarChar(100)
+  ref       String?   @db.VarChar(100)
+  auto_time DateTime? @default(now()) @db.DateTime(0)
+  user_id   Int?
+
+  @@index([date], map: "idx_date")
+  @@index([id], map: "idx_id")
+  @@map("tbl_log_17-7-23")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_log_backup {
+  id        Int       @default(0)
+  date      DateTime? @db.Date
+  item_code String?   @db.VarChar(100)
+  subject   String?   @db.VarChar(100)
+  details   String?   @db.VarChar(100)
+  ref       String?   @db.VarChar(100)
+  auto_time DateTime? @default(now()) @db.DateTime(0)
+  user_id   Int?
+
+  @@ignore
+}

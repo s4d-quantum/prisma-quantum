@@ -1,0 +1,195 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get current date for time-based queries
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+
+    // Parallel queries for dashboard metrics
+    const [
+      imeiStock,
+      serialStock,
+      bookedOut,
+      pendingQC,
+      imeiReturns,
+      recentOrders,
+      recentPurchases,
+      inventoryStatus,
+      pendingTasks,
+      recentActivity
+    ] = await Promise.all([
+      // IMEI Stock Count
+      prisma.tbl_imei.count({
+        where: { status: { not: null } }
+      }),
+
+      // Serial Products Stock Count
+      prisma.tbl_serial_products.count({
+        where: { status: { not: null } }
+      }),
+
+      // Booked Out (Orders) vs Total Stock
+      Promise.all([
+        prisma.tbl_orders.count({
+          where: {
+            date: { gte: lastMonth },
+            order_return: { not: 1 }
+          }
+        }),
+        prisma.tbl_imei.count()
+      ]).then(([booked, total]) => ({ booked, total })),
+
+      // Pending QC Items
+      prisma.tbl_purchases.count({
+        where: {
+          qc_required: 1,
+          qc_completed: { not: 1 }
+        }
+      }),
+
+      // IMEI Returns
+      prisma.tbl_orders.count({
+        where: {
+          order_return: 1,
+          date: { gte: lastMonth }
+        }
+      }),
+
+      // Recent Orders (last 5)
+      prisma.tbl_orders.findMany({
+        take: 5,
+        orderBy: { date: 'desc' }
+      }),
+
+      // Recent Purchases (last 5)
+      prisma.tbl_purchases.findMany({
+        take: 5,
+        orderBy: { date: 'desc' }
+      }),
+
+      // Inventory Status Breakdown
+      Promise.all([
+        prisma.tbl_imei.count({ where: { status: 1 } }), // In Stock
+        prisma.tbl_imei.count({ where: { status: 2 } }), // Low Stock (assuming status 2)
+        prisma.tbl_imei.count({ where: { status: 0 } })  // Out of Stock
+      ]).then(([inStock, lowStock, outOfStock]) => ({
+        inStock,
+        lowStock,
+        outOfStock,
+        total: inStock + lowStock + outOfStock
+      })),
+
+      // Pending Tasks
+      Promise.all([
+        prisma.tbl_purchases.count({
+          where: { qc_required: 1, qc_completed: { not: 1 } }
+        }),
+        prisma.tbl_purchases.count({
+          where: { repair_required: 1, repair_completed: { not: 1 } }
+        }),
+        prisma.tbl_purchase_return.count({
+          where: { is_delivered: { not: 1 } }
+        }),
+        prisma.tbl_orders.count({
+          where: { is_delivered: { not: 1 } }
+        })
+      ]).then(([qcPending, repairPending, returnsToProcess, deliveriesToConfirm]) => ({
+        qcPending,
+        repairPending,
+        returnsToProcess,
+        deliveriesToConfirm
+      })),
+
+      // Recent Activity from logs
+      prisma.tbl_log.findMany({
+        take: 10,
+        orderBy: { auto_time: 'desc' },
+        select: {
+          id: true,
+          date: true,
+          subject: true,
+          details: true,
+          item_code: true,
+          auto_time: true
+        }
+      })
+    ]);
+
+    // Calculate percentages and trends
+    const imeiStockChange = "+7%"; // This would come from historical data comparison
+    const bookedOutPercentage = bookedOut.total > 0 ? Math.round((bookedOut.booked / bookedOut.total) * 100) : 0;
+    const pendingQCChange = "+5%"; // This would come from historical data comparison
+    const returnsChange = "-7%"; // This would come from historical data comparison
+
+    return NextResponse.json({
+      metrics: {
+        imeiStock: {
+          value: imeiStock,
+          change: imeiStockChange,
+          label: "IMEI Stock"
+        },
+        bookedOut: {
+          value: `${bookedOut.booked} / ${bookedOut.total}`,
+          percentage: bookedOutPercentage,
+          change: "+5%",
+          label: "Booked Out/In"
+        },
+        pendingQC: {
+          value: pendingQC,
+          change: pendingQCChange,
+          label: "IMEI Units Pending QC"
+        },
+        returns: {
+          value: imeiReturns,
+          change: returnsChange,
+          label: "IMEI Returns"
+        }
+      },
+      inventoryStatus: {
+        inStock: inventoryStatus.inStock,
+        lowStock: inventoryStatus.lowStock,
+        outOfStock: inventoryStatus.outOfStock,
+        total: inventoryStatus.total,
+        inStockPercentage: Math.round((inventoryStatus.inStock / inventoryStatus.total) * 100) || 0,
+        lowStockPercentage: Math.round((inventoryStatus.lowStock / inventoryStatus.total) * 100) || 0,
+        outOfStockPercentage: Math.round((inventoryStatus.outOfStock / inventoryStatus.total) * 100) || 0
+      },
+      pendingTasks: {
+        ordersToProcess: pendingTasks.qcPending,
+        itemsToRestock: pendingTasks.repairPending,
+        returnsToProcess: pendingTasks.returnsToProcess,
+        deliveriesToConfirm: pendingTasks.deliveriesToConfirm
+      },
+      recentActivity: recentActivity.map(activity => ({
+        id: activity.id,
+        type: activity.subject,
+        description: activity.details,
+        itemCode: activity.item_code,
+        time: activity.auto_time
+      })),
+      recentOrders: recentOrders.slice(0, 5),
+      recentPurchases: recentPurchases.slice(0, 5)
+    });
+
+  } catch (error) {
+    console.error("Dashboard API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch dashboard data" },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}

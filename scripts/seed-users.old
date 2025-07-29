@@ -1,0 +1,48 @@
+import { PrismaClient } from '@prisma/client';
+  import bcrypt from 'bcrypt';
+  import { config } from 'dotenv';
+
+  config();
+
+  const prisma = new PrismaClient();
+
+  async function seedUsers() {
+    const users = [
+      { name: 'Phil', email: 'phil@example.com', role: 'user' },
+      { name: 'Vicky', email: 'vicky@example.com', role: 'user' },
+      { name: 'Adam', email: 'adam@example.com', role: 'user' },
+      { name: 'Claire', email: 'claire@example.com', role: 'user' },
+      { name: 'Paul', email: 'paul@example.com', role: 'user' },
+      { name: 'Ben', email: 'ben@example.com', role: 'user' },
+      { name: 'Vitalija', email: 'vitalija@example.com', role: 'user' },
+      { name: 'Rominta', email: 'rominta@example.com', role: 'user' },
+    ];
+
+    const password = '715525';
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    for (const user of users) {
+      await prisma.tbl_accounts.upsert({
+        where: { user_email: user.email },
+        update: {},
+        create: {
+          user_name: user.name,
+          user_email: user.email,
+          user_password: hashedPassword,
+          user_role: user.role,
+          status: 1,
+          created_at: new Date(),
+        },
+      });
+      console.log(`Created/Updated user: ${user.name}`);
+    }
+  }
+
+  seedUsers()
+    .catch((e) => {
+      console.error('Error seeding users:', e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
