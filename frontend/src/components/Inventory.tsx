@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 // import { useAuth } from '../context/AuthContext';  // Removed authentication
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
@@ -38,6 +39,7 @@ interface Supplier {
 }
 
 const Inventory: React.FC = () => {
+  const navigate = useNavigate();
   const [devices, setDevices] = useState<ImeiDevice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -150,6 +152,10 @@ const Inventory: React.FC = () => {
     fetchDevices();
   };
 
+  const handleImeiClick = (imei: string) => {
+    navigate(`/inventory/device/${imei}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -183,8 +189,6 @@ const Inventory: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100">
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
-              <h1 className="text-2xl font-semibold text-gray-800">Inventory</h1>
-              <p className="text-gray-600">Manage your device inventory</p>
             </div>
 
             {/* Search and Filters */}
@@ -330,7 +334,7 @@ const Inventory: React.FC = () => {
                     {devices.length > 0 ? (
                       devices.map((device) => (
                         <tr key={device.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600 hover:text-blue-800 hover:underline cursor-pointer" onClick={() => handleImeiClick(device.item_imei)}>
                             {device.item_imei}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

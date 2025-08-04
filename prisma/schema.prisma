@@ -608,3 +608,25 @@ model tbl_log_backup {
 
   @@ignore
 }
+
+// Database views for device info page
+model vw_tac {
+  item_tac     String? @db.VarChar(100)
+  item_details String? @db.VarChar(100)
+  brand_title  String? @db.VarChar(100)
+
+  @@id([item_tac])
+}
+
+model vw_device_supplier {
+  item_imei      String? @db.VarChar(100)
+  supplier_name  String? @db.VarChar(100)
+  supplier_address String? @db.VarChar(100)
+  supplier_city  String? @db.VarChar(100)
+  supplier_country String? @db.VarChar(100)
+  supplier_phone String? @db.VarChar(100)
+  supplier_email String? @db.VarChar(100)
+  supplier_vat   String? @db.VarChar(50)
+
+  @@id([item_imei])
+}

@@ -1,10 +1,43 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 interface NavbarProps {
   onMenuClick: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
+  const location = useLocation();
+  
+  const getPageTitle = () => {
+    switch (location.pathname) {
+      case '/dashboard':
+        return 'Dashboard';
+      case '/inventory':
+        return 'Inventory';
+      case '/goods-in':
+        return 'Goods In';
+      case '/goods-out':
+        return 'Goods Out';
+      case '/customers':
+        return 'Customers';
+      case '/suppliers':
+        return 'Suppliers';
+      case '/reports':
+        return 'Reports';
+      default:
+        // For device info page, we'll handle it separately
+        if (location.pathname.startsWith('/inventory/device/')) {
+          const imei = location.pathname.split('/').pop();
+          return `Device Information
+Detailed information for device ${imei}`;
+        }
+        return 'Inventory Management System';
+    }
+  };
+
+  const title = getPageTitle();
+  const isDeviceInfoPage = location.pathname.startsWith('/inventory/device/');
+
   return (
     <nav className="bg-white shadow-sm">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -20,8 +53,15 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="hidden lg:block ml-4">
-              <h2 className="text-xl font-semibold text-gray-800">Inventory Management System</h2>
+            <div className="hidden lg:block flex-1 text-center">
+              {isDeviceInfoPage ? (
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">Device Information</h2>
+                  <p className="text-sm text-gray-600">Detailed information for device {location.pathname.split('/').pop()}</p>
+                </div>
+              ) : (
+                <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
+              )}
             </div>
           </div>
           

@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
 
     // Get current date for time-based queries
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
 
     // Get dashboard data based on actual schema
@@ -26,7 +30,13 @@ export async function GET(request: NextRequest) {
       totalSuppliers,
       pendingOrders,
       recentOrdersRaw,
-      lowStockItems
+      lowStockItems,
+      // New dashboard data points
+      imeiStock,
+      totalInToday,
+      totalOutToday,
+      devicesAwaitingQC,
+      recentGoodsInRaw
     ] = await Promise.all([
       // Total IMEI products
       prisma.tbl_imei.count(),
@@ -61,21 +71,145 @@ export async function GET(request: NextRequest) {
         where: {
           status: { in: [1, 2] }
         }
-      })
+      }),
+      
+      // IMEI Stock: Total no of devices in stock (status = 1 in tbl_imei)
+      prisma.tbl_imei.count({
+        where: {
+          status: 1
+        }
+      }),
+      
+      // Total In: no of units booked in today 
+      // (from tbl_purchases where date = today)
+      prisma.tbl_purchases.count({
+        where: {
+          date: {
+            gte: today,
+            lt: tomorrow
+          }
+        }
+      }),
+      
+      // Total Out: no of units booked out today 
+      // (from tbl_imei_sales_orders where date = today and is_completed = 1)
+      prisma.tbl_imei_sales_orders.count({
+        where: {
+          date: {
+            gte: today,
+            lt: tomorrow
+          },
+          is_completed: 1
+        }
+      }),
+      
+      // Devices awaiting QC: count of all devices in tbl_purchases 
+      // with qc_required = 1 and qc_completed = 0
+      prisma.tbl_purchases.count({
+        where: {
+          qc_required: 1,
+          qc_completed: 0
+        }
+      }),
+      
+      // Recent Goods In table: most recent purchases with supplier information
+      // We need to get distinct purchases by grouping by purchase_id
+      prisma.$queryRaw`
+        SELECT DISTINCT 
+          purchase_id,
+          date,
+          supplier_id,
+          qc_required,
+          qc_completed
+        FROM tbl_purchases
+        ORDER BY date DESC
+        LIMIT 10
+      `
     ]);
 
+    // Process recentGoodsIn to convert from raw query result to objects
+    const recentGoodsIn = Array.isArray(recentGoodsInRaw) 
+      ? recentGoodsInRaw.map((item: any) => ({
+          purchase_id: item.purchase_id,
+          date: item.date,
+          supplier_id: item.supplier_id,
+          qc_required: item.qc_required,
+          qc_completed: item.qc_completed
+        }))
+      : [];
+
     // Get customer data for recent orders manually
-    const customerIds = [...new Set(recentOrdersRaw.map(order => order.customer_id))];
-    const customers = await prisma.tbl_customers.findMany({
-      where: {
-        customer_id: { in: customerIds }
+    const customerIds: string[] = [];
+    recentOrdersRaw.forEach((order: any) => {
+      if (order.customer_id && !customerIds.includes(order.customer_id)) {
+        customerIds.push(order.customer_id);
       }
     });
+    
+    const customers = customerIds.length > 0 
+      ? await prisma.tbl_customers.findMany({
+          where: {
+            customer_id: { in: customerIds }
+          }
+        })
+      : [];
 
-    const customerMap = customers.reduce((acc, customer) => {
-      acc[customer.customer_id!] = customer;
-      return acc;
-    }, {} as Record<string, any>);
+    const customerMap: Record<string, any> = {};
+    customers.forEach((customer: any) => {
+      customerMap[customer.customer_id] = customer;
+    });
+
+    // Get supplier data for recent goods in
+    const supplierIds: string[] = [];
+    recentGoodsIn.forEach((purchase: any) => {
+      if (purchase.supplier_id && !supplierIds.includes(purchase.supplier_id)) {
+        supplierIds.push(purchase.supplier_id);
+      }
+    });
+    
+    const suppliers = supplierIds.length > 0 
+      ? await prisma.tbl_suppliers.findMany({
+          where: {
+            supplier_id: { in: supplierIds }
+          }
+        })
+      : [];
+
+    const supplierMap: Record<string, any> = {};
+    suppliers.forEach((supplier: any) => {
+      supplierMap[supplier.supplier_id] = supplier;
+    });
+
+    // For each recentGoodsIn item, we need to count how many IMEIs are associated with that purchase_id
+    let imeiCountMap: Record<number, number> = {};
+    
+    // Only try to get IMEI counts if we have recentGoodsIn items
+    if (recentGoodsIn.length > 0) {
+      try {
+        const purchaseIds = recentGoodsIn.map((purchase: any) => purchase.purchase_id);
+        const imeiCounts = await prisma.tbl_imei.groupBy({
+          by: ['purchase_id'],
+          _count: {
+            item_imei: true
+          },
+          where: {
+            purchase_id: {
+              in: purchaseIds
+            }
+          }
+        });
+        
+        // Create a map of purchase_id to IMEI count
+        imeiCountMap = {};
+        imeiCounts.forEach((item: any) => {
+          imeiCountMap[item.purchase_id] = item._count.item_imei;
+        });
+      } catch (error) {
+        console.error("Error fetching IMEI counts:", error);
+        // If there's an error, we'll just use 0 for all quantities
+        imeiCountMap = {};
+      }
+    }
 
     // Format the response to match frontend expectations
     const response = {
@@ -85,7 +219,7 @@ export async function GET(request: NextRequest) {
       totalProducts,
       totalSuppliers,
       pendingOrders,
-      recentOrders: recentOrdersRaw.map(order => ({
+      recentOrders: recentOrdersRaw.map((order: any) => ({
         id: order.id,
         order_id: order.order_id,
         customer_id: order.customer_id,
@@ -96,7 +230,7 @@ export async function GET(request: NextRequest) {
         customer: customerMap[order.customer_id] || null
       })),
       topSellingProducts: [], // You can implement this later
-      lowStockItems: lowStockItems.map(item => ({
+      lowStockItems: lowStockItems.map((item: any) => ({
         id: item.id,
         item_imei: item.item_imei,
         item_tac: item.item_tac,
@@ -105,7 +239,25 @@ export async function GET(request: NextRequest) {
         item_gb: item.item_gb,
         status: item.status,
         created_at: item.created_at
-      }))
+      })),
+      // New dashboard data points
+      imeiStock,
+      totalInToday,
+      totalOutToday,
+      devicesAwaitingQC,
+      recentGoodsIn: recentGoodsIn.map((purchase: any) => {
+        // Count the number of IMEIs for this purchase
+        const quantity = imeiCountMap[purchase.purchase_id] || 0;
+        
+        return {
+          purchase_id: purchase.purchase_id,
+          date: purchase.date,
+          supplier: supplierMap[purchase.supplier_id] || null,
+          supplier_name: supplierMap[purchase.supplier_id]?.name || 'Unknown Supplier',
+          qc_required: purchase.qc_required === 1 ? 'Yes' : 'No',
+          quantity: quantity
+        };
+      })
     };
 
     return NextResponse.json(response);

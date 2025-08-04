@@ -1,14 +1,29 @@
 {
   "pages": {
-    "/api/inventory/imei/route": [
+    "/api/inventory/imei/[id]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/inventory/imei/route.js"
+      "static/chunks/app/api/inventory/imei/[id]/route.js"
+    ],
+    "/api/dashboard/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/dashboard/route.js"
     ],
     "/api/suppliers/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/suppliers/route.js"
+    ],
+    "/api/inventory/imei/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/inventory/imei/route.js"
+    ],
+    "/api/customers/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/customers/route.js"
     ]
   }
 }

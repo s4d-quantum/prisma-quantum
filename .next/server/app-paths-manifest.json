@@ -1,4 +1,7 @@
 {
+  "/api/dashboard/route": "app/api/dashboard/route.js",
   "/api/inventory/imei/route": "app/api/inventory/imei/route.js",
-  "/api/suppliers/route": "app/api/suppliers/route.js"
+  "/api/suppliers/route": "app/api/suppliers/route.js",
+  "/api/inventory/imei/[id]/route": "app/api/inventory/imei/[id]/route.js",
+  "/api/customers/route": "app/api/customers/route.js"
 }
