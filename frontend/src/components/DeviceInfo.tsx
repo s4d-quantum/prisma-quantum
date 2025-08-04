@@ -71,7 +71,7 @@ const DeviceInfo: React.FC = () => {
       setLoading(true);
       const response = await axios.get<DeviceInfo>(`/api/inventory/imei/${imei}`, {
         withCredentials: true,
-        timeout: 10000 // 10 second timeout
+        timeout: 15000 // 15 second timeout
       });
       
       setDeviceInfo(response.data);

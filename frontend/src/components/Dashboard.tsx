@@ -43,7 +43,16 @@ const Dashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/dashboard');
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        
+        const response = await fetch('/api/dashboard', {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch dashboard data: ${response.statusText}`);
@@ -52,9 +61,14 @@ const Dashboard: React.FC = () => {
         const data: DashboardData = await response.json();
         setDashboardData(data);
         setError(null);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data. Please try again later.');
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.error('Dashboard data fetch timed out');
+          setError('Request timed out. Please try again later.');
+        } else {
+          console.error('Error fetching dashboard data:', err);
+          setError('Failed to load dashboard data. Please try again later.');
+        }
       } finally {
         setLoading(false);
       }

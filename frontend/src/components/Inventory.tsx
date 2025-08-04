@@ -74,7 +74,8 @@ const Inventory: React.FC = () => {
           page: 1,
           limit: 1000 // Fetch all suppliers (increased limit)
         },
-        withCredentials: true
+        withCredentials: true,
+        timeout: 15000
       });
       
       setSuppliers(response.data.suppliers);
@@ -98,7 +99,7 @@ const Inventory: React.FC = () => {
           supplier: supplierFilter || undefined
         },
         withCredentials: true, // Important for CORS with credentials
-        timeout: 5000 // 5 second timeout
+        timeout: 15000 // 15 second timeout
       });
       
       setDevices(response.data.data);

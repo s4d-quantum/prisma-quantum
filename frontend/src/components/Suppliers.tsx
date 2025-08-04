@@ -63,7 +63,8 @@ const Suppliers: React.FC = () => {
           limit: 10,
           search: searchTerm
         },
-        withCredentials: true
+        withCredentials: true,
+        timeout: 15000
       });
       
       setSuppliers(response.data.suppliers);
@@ -94,7 +95,8 @@ const Suppliers: React.FC = () => {
 
     try {
       await axios.post('/api/suppliers', formData, {
-        withCredentials: true
+        withCredentials: true,
+        timeout: 15000
       });
       alert('Supplier added successfully!');
       

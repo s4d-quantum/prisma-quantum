@@ -29,6 +29,21 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/goods-in/route.js"
+    ],
+    "/api/goods-out/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/goods-out/route.js"
+    ],
+    "/api/purchases/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/purchases/route.js"
+    ],
+    "/api/inventory/imei/purchase/[id]/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/inventory/imei/purchase/[id]/route.js"
     ]
   }
 }

@@ -63,7 +63,8 @@ const Customers: React.FC = () => {
           limit: 10,
           search: searchTerm
         },
-        withCredentials: true
+        withCredentials: true,
+        timeout: 15000
       });
       
       setCustomers(response.data.customers);
@@ -94,7 +95,8 @@ const Customers: React.FC = () => {
 
     try {
       await axios.post('/api/customers', formData, {
-        withCredentials: true
+        withCredentials: true,
+        timeout: 15000
       });
       alert('Customer added successfully!');
       

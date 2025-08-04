@@ -67,14 +67,19 @@ export default function SuppliersPage() {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await axios.get(`/api/suppliers?${params}`);
+      const response = await axios.get(`/api/suppliers?${params}`, {
+        timeout: 15000 // 15 second timeout
+      });
       const data: ApiResponse = response.data;
       
       setSuppliers(data.suppliers);
       setTotalPages(data.pagination.totalPages);
       setTotalCount(data.pagination.totalCount);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching suppliers:", error);
+      if (error.code === 'ECONNABORTED') {
+        console.error('Suppliers fetch timed out');
+      }
     } finally {
       setLoading(false);
     }
@@ -95,7 +100,9 @@ export default function SuppliersPage() {
     }
 
     try {
-      await axios.post("/api/suppliers", formData);
+      await axios.post("/api/suppliers", formData, {
+        timeout: 15000 // 15 second timeout
+      });
       alert("Supplier added successfully!");
       
       // Reset form and refetch suppliers
@@ -114,7 +121,9 @@ export default function SuppliersPage() {
       fetchSuppliers();
     } catch (error: any) {
       console.error("Error adding supplier:", error);
-      if (error.response?.status === 409) {
+      if (error.code === 'ECONNABORTED') {
+        alert("Request timed out. Please try again.");
+      } else if (error.response?.status === 409) {
         alert("Supplier ID already exists");
       } else {
         alert("Failed to add supplier");

@@ -7,6 +7,8 @@ import Customers from './Customers';
 import Suppliers from './Suppliers';
 import DeviceInfo from './DeviceInfo';
 import GoodsIn from './GoodsIn';
+import GoodsOut from './GoodsOut';
+import GoodsInDetail from './GoodsIn/Detail';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -17,7 +19,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/inventory" element={<Inventory />} />
       <Route path="/inventory/device/:imei" element={<DeviceInfo />} />
       <Route path="/goods-in" element={<GoodsIn />} />
-      <Route path="/goods-out" element={<div>Goods Out Page</div>} />
+      <Route path="/goods-in/detail/:id" element={<GoodsInDetail />} />
+      <Route path="/goods-out" element={<GoodsOut />} />
       <Route path="/customers" element={<Customers />} />
       <Route path="/suppliers" element={<Suppliers />} />
       <Route path="/reports" element={<div>Reports Page</div>} />

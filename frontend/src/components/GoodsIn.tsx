@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
@@ -29,6 +30,7 @@ interface ApiResponse {
 }
 
 const GoodsIn: React.FC = () => {
+  const navigate = useNavigate();
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +82,7 @@ const GoodsIn: React.FC = () => {
           dateTo: dateToFilter || undefined
         },
         withCredentials: true,
-        timeout: 5000
+        timeout: 15000
       });
       
       setPurchaseOrders(response.data.purchaseOrders);
@@ -269,8 +271,8 @@ const GoodsIn: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {purchaseOrders.length > 0 ? (
                       purchaseOrders.map((order) => (
-                        <tr key={order.purchase_id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <tr key={order.purchase_id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/goods-in/detail/${order.purchase_id}`)}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 hover:underline">
                             {order.purchase_id}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

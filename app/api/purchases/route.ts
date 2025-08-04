@@ -13,22 +13,25 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
+    const purchaseId = searchParams.get('purchaseId') || '';
     const supplier_id = searchParams.get('supplier_id');
     const qc_status = searchParams.get('qc_status');
 
     const skip = (page - 1) * limit;
 
-    // Build where clause for filtering
-    const where: any = {};
     
-    if (search) {
-      where.OR = [
-        { item_imei: { contains: search } },
-        { po_ref: { contains: search } },
-        { tray_id: { contains: search } }
-      ];
-    }
-
+        // Build where clause for filtering
+        const where: any = {};
+        
+        if (purchaseId) {
+          where.purchase_id = parseInt(purchaseId);
+        } else if (search) {
+          where.OR = [
+            { item_imei: { contains: search } },
+            { po_ref: { contains: search } },
+            { tray_id: { contains: search } }
+          ];
+        }
     if (supplier_id) {
       where.supplier_id = supplier_id;
     }
