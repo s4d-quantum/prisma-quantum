@@ -106,9 +106,16 @@ const SalesOrders: React.FC = () => {
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100">
           <div className="max-w-7xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-800">Sales Orders</h1>
-              <p className="text-gray-600">Manage sales orders and customer deliveries</p>
+            <div className="mb-6 flex justify-between items-center">
+              <div>
+                <p className="text-gray-600">Manage sales orders and customer deliveries</p>
+              </div>
+              <a
+                href="/sales-orders/new"
+                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              >
+                New Sales Order
+              </a>
             </div>
 
             {/* Search and Filters */}
@@ -143,12 +150,6 @@ const SalesOrders: React.FC = () => {
                     >
                       Clear
                     </button>
-                    <a
-                      href="/sales-orders/new"
-                      className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                    >
-                      New Sales Order
-                    </a>
                   </div>
                 </form>
               </div>
@@ -173,16 +174,16 @@ const SalesOrders: React.FC = () => {
                     {salesOrders.length > 0 ? (
                       salesOrders.map((order) => (
                         <tr key={order.order_id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/sales-orders/${order.order_id}`)}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 hover:underline">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 hover:underline text-left">
                             {order.order_id}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">
                             {new Date(order.date).toLocaleDateString()}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">
                             {order.customer || order.customer_id}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">
                             {order.quantity}
                           </td>
                         </tr>

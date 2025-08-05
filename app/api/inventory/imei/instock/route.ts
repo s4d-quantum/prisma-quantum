@@ -108,11 +108,13 @@ export async function GET(request: NextRequest) {
         g.title as grade,
         i.item_grade as grade_id,
         c.title as manufacturer,
-        COUNT(i.item_imei) as quantity_available
+        COUNT(i.item_imei) as quantity_available,
+        GROUP_CONCAT(DISTINCT p.tray_id) as tray_ids
       FROM tbl_imei i
       LEFT JOIN tbl_tac t ON i.item_tac = t.item_tac
       LEFT JOIN tbl_categories c ON t.item_brand = c.category_id
       LEFT JOIN tbl_grades g ON i.item_grade = g.grade_id
+      LEFT JOIN tbl_purchases p ON i.item_imei = p.item_imei
       WHERE i.status = 1
     `;
 

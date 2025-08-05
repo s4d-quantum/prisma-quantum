@@ -27,6 +27,7 @@ interface Device {
   grade_id: number;
   manufacturer: string;
   quantity_available: number;
+  tray_ids: string;
   // Add a unique id for grouped items
   id: string;
 }
@@ -62,6 +63,9 @@ const DeviceRow: React.FC<{
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
         {device.manufacturer}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        {device.tray_ids || 'N/A'}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
         {device.quantity_available}
@@ -290,7 +294,6 @@ const NewSalesOrder: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100">
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-800">New Sales Order</h1>
               <p className="text-gray-600">Create a new sales order by selecting supplier and devices</p>
             </div>
 
@@ -365,6 +368,7 @@ const NewSalesOrder: React.FC = () => {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Storage</th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manufacturer</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity Available</th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Add to Order</th>
                       </tr>

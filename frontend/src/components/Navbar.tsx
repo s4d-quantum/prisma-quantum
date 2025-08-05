@@ -24,6 +24,10 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
         return 'Suppliers';
       case '/reports':
         return 'Reports';
+      case '/sales-orders':
+        return 'Sales Orders';
+      case '/sales-orders/new':
+        return 'New Sales Order';
       default:
         // For device info page, we'll handle it separately
         if (location.pathname.startsWith('/inventory/device/')) {
