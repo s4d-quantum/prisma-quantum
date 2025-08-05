@@ -31,6 +31,14 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
           return `Device Information
 Detailed information for device ${imei}`;
         }
+        // For sales order detail page
+        if (location.pathname.startsWith('/sales-orders/')) {
+          const orderId = location.pathname.split('/').pop();
+          // Check if it's a valid number (not 'new')
+          if (orderId !== 'new' && !isNaN(Number(orderId))) {
+            return `Sales Order Details`;
+          }
+        }
         return 'Inventory Management System';
     }
   };

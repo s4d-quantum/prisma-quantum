@@ -615,7 +615,7 @@ model vw_tac {
   item_details String? @db.VarChar(100)
   brand_title  String? @db.VarChar(100)
 
-  @@id([item_tac])
+  @@ignore
 }
 
 model vw_device_supplier {
@@ -628,5 +628,5 @@ model vw_device_supplier {
   supplier_email String? @db.VarChar(100)
   supplier_vat   String? @db.VarChar(50)
 
-  @@id([item_imei])
+  @@ignore
 }

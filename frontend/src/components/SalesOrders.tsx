@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
@@ -28,6 +29,7 @@ const SalesOrders: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const navigate = useNavigate();
   
   // Filter states
   const [orderIdFilter, setOrderIdFilter] = useState<string>('');
@@ -170,8 +172,8 @@ const SalesOrders: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {salesOrders.length > 0 ? (
                       salesOrders.map((order) => (
-                        <tr key={order.order_id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <tr key={order.order_id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/sales-orders/${order.order_id}`)}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 hover:underline">
                             {order.order_id}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
