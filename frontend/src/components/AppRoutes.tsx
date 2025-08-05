@@ -12,6 +12,7 @@ import GoodsInDetail from './GoodsIn/Detail';
 import SalesOrders from './SalesOrders';
 import NewSalesOrder from './NewSalesOrder';
 import SalesOrderDetail from './SalesOrderDetail';
+import GoodsOutScan from './GoodsOut/Scan';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -27,6 +28,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/sales-orders" element={<SalesOrders />} />
       <Route path="/sales-orders/new" element={<NewSalesOrder />} />
       <Route path="/sales-orders/:id" element={<SalesOrderDetail />} />
+      <Route path="/goods-out/scan/:orderId" element={<GoodsOutScan />} />
       <Route path="/customers" element={<Customers />} />
       <Route path="/suppliers" element={<Suppliers />} />
       <Route path="/reports" element={<div>Reports Page</div>} />

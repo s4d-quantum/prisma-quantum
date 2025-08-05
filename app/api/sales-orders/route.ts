@@ -3,6 +3,19 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+function getGradeText(grade: number): string {
+  const gradeMap: { [key: number]: string } = {
+    1: "A",
+    2: "B",
+    3: "C",
+    4: "D",
+    5: "E",
+    6: "F"
+  };
+  
+  return gradeMap[grade] || "N/A";
+}
+
 // GET /api/sales-orders - List sales orders with pagination and filtering
 export async function GET(request: NextRequest) {
   try {
@@ -72,7 +85,7 @@ export async function GET(request: NextRequest) {
         }
       },
       _count: {
-        item_code: true
+        _all: true
       }
     });
 
@@ -85,7 +98,7 @@ export async function GET(request: NextRequest) {
         date: order.date,
         customer_id: order.customer_id,
         customer: customer?.name || null,
-        quantity: count?._count.item_code || 0
+        quantity: count?._count._all || 0
       };
     });
 
@@ -108,6 +121,106 @@ export async function GET(request: NextRequest) {
     console.error("Sales Orders GET error:", error);
     return NextResponse.json(
       { error: "Failed to fetch sales orders" },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// POST /api/sales-orders - Create new sales order
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const {
+      customer_id,
+      items,
+      customer_ref,
+      po_ref,
+      supplier_id
+    } = body;
+
+    // Validate required fields
+    if (!customer_id || !items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { error: "Customer ID and items are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if customer exists
+    const customer = await prisma.tbl_customers.findFirst({
+      where: { customer_id }
+    });
+
+    if (!customer) {
+      return NextResponse.json(
+        { error: "Customer not found" },
+        { status: 404 }
+      );
+    }
+
+    // Get the next order_id (sequential)
+    const lastOrder = await prisma.tbl_imei_sales_orders.findFirst({
+      orderBy: { order_id: 'desc' },
+      select: { order_id: true }
+    });
+    
+    const nextOrderId = lastOrder && lastOrder.order_id ? lastOrder.order_id + 1 : 1;
+
+    // Create sales order items
+    const salesOrderItems = [];
+    
+    // Process each item and create multiple entries based on quantity
+    for (const item of items) {
+      const {
+        item_brand,
+        item_details,
+        item_color,
+        item_grade,
+        item_gb,
+        quantity,
+        tray_id
+      } = item;
+      
+      // Create individual entries for each quantity
+      for (let i = 0; i < quantity; i++) {
+        salesOrderItems.push({
+          order_id: nextOrderId,
+          customer_id,
+          item_brand,
+          item_details,
+          item_color,
+          item_grade: getGradeText(item_grade), // Convert numeric grade to letter
+          item_gb,
+          date: new Date(),
+          tray_id: tray_id || null,
+          is_completed: 0,
+          item_code: null, // Will be filled when goods out is processed
+          goodsout_order_id: null, // Will be filled when goods out is processed
+          po_ref: po_ref || null,
+          customer_ref: customer_ref || null,
+          supplier_id: supplier_id || null
+        });
+      }
+    }
+
+    // Create all sales order items in a single transaction
+    const createdItems = await prisma.tbl_imei_sales_orders.createMany({
+      data: salesOrderItems
+    });
+
+    // Return success response
+    return NextResponse.json({
+      message: "Sales order created successfully",
+      order_id: nextOrderId,
+      items_created: createdItems.count
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error("Sales Orders POST error:", error);
+    return NextResponse.json(
+      { error: "Failed to create sales order" },
       { status: 500 }
     );
   } finally {

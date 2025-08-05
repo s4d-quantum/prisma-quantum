@@ -250,15 +250,58 @@ const NewSalesOrder: React.FC = () => {
     setSalesOrderItems(salesOrderItems.filter(item => item.id !== id));
   };
 
-  const handleSubmitOrder = () => {
-    // This will be implemented later
-    console.log('Submitting order:', {
-      customer: selectedCustomer,
-      customerRef: customerRef,
-      poRef: poRef,
-      items: salesOrderItems
-    });
-    alert('Order submission functionality will be implemented later.');
+  const handleSubmitOrder = async () => {
+    try {
+      // Validate required fields
+      if (!selectedCustomer) {
+        alert('Please select a customer');
+        return;
+      }
+      
+      if (!selectedSupplier) {
+        alert('Please select a supplier');
+        return;
+      }
+      
+      if (salesOrderItems.length === 0) {
+        alert('Please add at least one item to the order');
+        return;
+      }
+      
+      // Prepare data for API call
+      const orderData = {
+        customer_id: selectedCustomer,
+        items: salesOrderItems.map(item => ({
+          item_brand: item.manufacturer,
+          item_details: item.model_name,
+          item_color: item.color,
+          item_grade: item.grade_id, // Use the numeric grade_id
+          item_gb: item.storage,
+          quantity: item.quantity,
+          tray_id: item.tray_ids || null
+        })),
+        customer_ref: customerRef,
+        po_ref: poRef,
+        supplier_id: selectedSupplier
+      };
+      
+      // Make API call to create sales order
+      const response = await axios.post('/api/sales-orders', orderData, {
+        withCredentials: true
+      });
+      
+      // Show success message
+      alert(`Sales order created successfully! Order ID: ${response.data.order_id}`);
+      
+      // Reset form
+      setSalesOrderItems([]);
+      setSelectedCustomer('');
+      setCustomerRef('');
+      setPoRef('');
+    } catch (error: any) {
+      console.error('Error submitting order:', error);
+      alert('Failed to submit order: ' + (error.response?.data?.error || 'Unknown error'));
+    }
   };
 
   if (loading && suppliers.length === 0) {

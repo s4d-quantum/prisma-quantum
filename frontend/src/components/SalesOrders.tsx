@@ -168,6 +168,7 @@ const SalesOrders: React.FC = () => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -186,11 +187,22 @@ const SalesOrders: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">
                             {order.quantity}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/goods-out/scan/${order.order_id}`);
+                              }}
+                              className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            >
+                              Goods Out
+                            </button>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
                           No sales orders found
                         </td>
                       </tr>
