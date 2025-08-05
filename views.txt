@@ -1,0 +1,86 @@
+Here are the SQL commands to add the recommended indexes (and the generated TAC column) in MariaDB. Run them as a privileged user, and adjust index names if they already exist.
+tbl_purchases Add a generated tac8 column and indexes for supplier_id, item_imei, tac8.
+ALTER TABLE tbl_purchases ADD COLUMN tac8 VARCHAR(8) GENERATED ALWAYS AS (LEFT(item_imei, 8)) STORED;
+CREATE INDEX idx_purchases_supplier ON tbl_purchases (supplier_id); CREATE INDEX idx_purchases_item_imei ON tbl_purchases (item_imei); CREATE INDEX idx_purchases_tac8 ON tbl_purchases (tac8);
+tbl_tac Indexes for TAC and brand.
+CREATE INDEX idx_tac_item_tac ON tbl_tac (item_tac); CREATE INDEX idx_tac_item_brand ON tbl_tac (item_brand);
+tbl_imei Indexes for IMEI and status. If you frequently filter by status and then join on item_imei, a composite index can help.
+CREATE INDEX idx_imei_item_imei ON tbl_imei (item_imei); CREATE INDEX idx_imei_status ON tbl_imei (status); -- Optional composite for queries that filter status=1 and join by item_imei: CREATE INDEX idx_imei_status_imei ON tbl_imei (status, item_imei);
+tbl_categories Indexes for category_id and (optionally) title.
+CREATE INDEX idx_categories_category_id ON tbl_categories (category_id); CREATE INDEX idx_categories_title ON tbl_categories (title);
+tbl_suppliers Index for supplier_id if you often look up by it (not just by name).
+CREATE INDEX idx_suppliers_supplier_id ON tbl_suppliers (supplier_id);
+Notes
+If any of these indexes already exist, DROP INDEX idx_name ON table_name; before creating or choose a different name.
+The generated column requires MariaDB 10.2+ (supported in most installs). If you cannot add a generated column, skip it and rely on LEFT(p.item_imei,8) in queries, but performance may be lower.
+After creating indexes, ANALYZE TABLE can help the optimizer:
+ANALYZE TABLE tbl_purchases, tbl_tac, tbl_imei, tbl_categories, tbl_suppliers;
+You
+ok please give me a summary of the views we have created and what can be returned from them etc as well as the indexes for documentation purposes
+
+Horizon Beta
+Here’s a concise documentation-style summary of the proposed views and indexes.
+Views
+v_purchases_with_tac Purpose: Normalize TAC extraction from purchases and expose supplier/IMEI with TAC8 for joining. Definition: CREATE OR REPLACE VIEW v_purchases_with_tac AS SELECT p.id AS purchase_row_id, p.purchase_id, p.item_imei, p.supplier_id, p.tac8 FROM tbl_purchases p WHERE p.item_imei IS NOT NULL AND LENGTH(p.item_imei) >= 8;
+Returns:
+purchase_row_id: Row id in tbl_purchases
+purchase_id: Purchase batch id
+item_imei: Device IMEI from purchase
+supplier_id: Supplier code (e.g., SUP-75)
+tac8: First 8 digits of IMEI (generated column on tbl_purchases)
+Notes:
+Requires tac8 generated column on tbl_purchases (see indexes section). If you cannot add it, replace p.tac8 with LEFT(p.item_imei, 8) in the view.
+v_tac_brand Purpose: TAC-to-brand mapping to identify manufacturer by TAC. Definition: CREATE OR REPLACE VIEW v_tac_brand AS SELECT t.item_tac AS tac8, t.item_brand FROM tbl_tac t;
+Returns:
+tac8: TAC code (8-digit as stored in tbl_tac.item_tac)
+item_brand: Manufacturer/brand identifier (should map to tbl_categories.category_id or title)
+v_instock_imei Purpose: Filter IMEIs to only those in stock. Definition: CREATE OR REPLACE VIEW v_instock_imei AS SELECT i.item_imei, i.item_tac, i.status FROM tbl_imei i WHERE i.status = 1;
+Returns:
+item_imei: IMEI
+item_tac: TAC if present on tbl_imei
+status: Always 1 in this view
+v_suppliers (optional convenience) Purpose: Clean list for UI selection. Definition: CREATE OR REPLACE VIEW v_suppliers AS SELECT s.supplier_id, s.name FROM tbl_suppliers s;
+Returns:
+supplier_id
+name
+v_manufacturers (optional convenience) Purpose: Clean list for UI selection of manufacturers. Definition: CREATE OR REPLACE VIEW v_manufacturers AS SELECT c.category_id, c.title FROM tbl_categories c;
+Returns:
+category_id: Preferred stable identifier for brand
+title: Display name
+v_instock_by_supplier_brand (optional aggregation view) Purpose: Single view to query in-stock devices by supplier and brand. Definition: CREATE OR REPLACE VIEW v_instock_by_supplier_brand AS SELECT p.supplier_id, tb.item_brand, p.item_imei FROM v_purchases_with_tac p JOIN v_tac_brand tb ON tb.tac8 = p.tac8 JOIN v_instock_imei ii ON ii.item_imei = p.item_imei;
+Returns:
+supplier_id
+item_brand
+item_imei
+Usage examples:
+Get in-stock IMEIs for a supplier and a brand: SELECT item_imei FROM v_instock_by_supplier_brand WHERE supplier_id = 'SUP-75' AND item_brand = 'APPLE'; -- adjust brand mapping as needed
+Or join categories if item_brand maps to category_id: SELECT p.item_imei FROM v_purchases_with_tac p JOIN v_tac_brand tb ON tb.tac8 = p.tac8 JOIN tbl_categories c ON c.category_id = tb.item_brand JOIN v_instock_imei ii ON ii.item_imei = p.item_imei WHERE p.supplier_id = 'SUP-75' AND c.category_id = 'APPLE';
+Indexes
+tbl_purchases
+Purpose: Fast filtering by supplier, IMEI, and TAC8; enable TAC8 via generated column. Commands: ALTER TABLE tbl_purchases ADD COLUMN tac8 VARCHAR(8) GENERATED ALWAYS AS (LEFT(item_imei, 8)) STORED; CREATE INDEX idx_purchases_supplier ON tbl_purchases (supplier_id); CREATE INDEX idx_purchases_item_imei ON tbl_purchases (item_imei); CREATE INDEX idx_purchases_tac8 ON tbl_purchases (tac8);
+tbl_tac
+Purpose: Fast lookup by TAC and brand. Commands: CREATE INDEX idx_tac_item_tac ON tbl_tac (item_tac); CREATE INDEX idx_tac_item_brand ON tbl_tac (item_brand);
+tbl_imei
+Purpose: Fast filtering by status and joining by IMEI. Commands: CREATE INDEX idx_imei_item_imei ON tbl_imei (item_imei); CREATE INDEX idx_imei_status ON tbl_imei (status); -- Optional composite when you filter status then join by IMEI: CREATE INDEX idx_imei_status_imei ON tbl_imei (status, item_imei);
+tbl_categories
+Purpose: Lookup/manufacturer mapping. Commands: CREATE INDEX idx_categories_category_id ON tbl_categories (category_id); CREATE INDEX idx_categories_title ON tbl_categories (title);
+tbl_suppliers
+Purpose: Lookup by supplier_id for selections/joins. Commands: CREATE INDEX idx_suppliers_supplier_id ON tbl_suppliers (supplier_id);
+Post-index maintenance
+Update optimizer statistics: ANALYZE TABLE tbl_purchases, tbl_tac, tbl_imei, tbl_categories, tbl_suppliers;
+Notes and assumptions
+item_brand in tbl_tac should align with tbl_categories.category_id (preferred). If it aligns with title instead, adjust joins accordingly or add a mapping.
+If you cannot add the generated tac8 column, keep LEFT(item_imei, 8) in views and queries. Performance will be acceptable but not as optimal as indexing the stored tac8 column.
+Use SELECT DISTINCT if you see duplicate IMEIs due to multiple purchase rows.
+
+Other views:
+
+
+CREATE OR REPLACE VIEW vw_device_supplier AS SELECT i.id AS imei_row_id, i.item_imei, i.item_tac, i.item_color, i.item_grade, i.item_gb, i.purchase_id AS imei_purchase_id, i.status AS imei_status, i.created_at AS imei_created_at,
+    -> 
+    -> p.id AS purchase_row_id, p.purchase_id AS purchase_number, p.date AS purchase_date, p.item_imei AS purchase_item_imei, p.supplier_id AS supplier_code,
+    -> 
+    -> s.id AS supplier_row_id, s.supplier_id AS supplier_code_dup, s.name AS supplier_name, s.address AS supplier_address, s.city AS supplier_city, s.country AS supplier_country, s.phone AS supplier_phone, s.email AS supplier_email, s.vat AS supplier_vat FROM tbl_imei i LEFT JOIN tbl_purchases p ON p.item_imei = i.item_imei LEFT JOIN tbl_suppliers s ON s.supplier_id = p.supplier_id;
+
+
+CREATE OR REPLACE VIEW vw_tac AS SELECT t.item_tac, t.item_details, t.item_brand AS brand_code, c.title AS brand_title FROM tbl_tac t LEFT JOIN tbl_categories c ON c.category_id = t.item_brand;

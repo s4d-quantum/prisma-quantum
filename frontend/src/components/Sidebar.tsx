@@ -55,8 +55,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
             Goods In
           </Link>
           
-          <Link 
-            to="/goods-out" 
+          <Link
+            to="/sales-orders"
+            className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 ${isActive('/sales-orders') ? 'bg-blue-50 border-r-4 border-blue-500' : ''}`}
+          >
+            <span className="mr-3">🛍️</span>
+            Sales Orders
+          </Link>
+          
+          <Link
+            to="/goods-out"
             className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 ${isActive('/goods-out') ? 'bg-blue-50 border-r-4 border-blue-500' : ''}`}
           >
             <span className="mr-3">📤</span>

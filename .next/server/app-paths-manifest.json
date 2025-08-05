@@ -1,7 +1,6 @@
 {
-  "/api/customers/route": "app/api/customers/route.js",
-  "/api/goods-out/route": "app/api/goods-out/route.js",
-  "/api/dashboard/route": "app/api/dashboard/route.js",
   "/api/suppliers/route": "app/api/suppliers/route.js",
-  "/api/goods-in/route": "app/api/goods-in/route.js"
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/inventory/imei/instock/route": "app/api/inventory/imei/instock/route.js",
+  "/api/customers/route": "app/api/customers/route.js"
 }
