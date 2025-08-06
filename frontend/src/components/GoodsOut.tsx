@@ -11,6 +11,7 @@ interface SalesOrder {
   customer_ref: string;
   delivery_company: string;
   tracking_no: string;
+  goodsout_order_id: number | null;
 }
 
 interface Customer {
@@ -35,6 +36,7 @@ const GoodsOut: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [generatingDispatchNote, setGeneratingDispatchNote] = useState<number | null>(null);
   
   // Filter states
   const [orderIdFilter, setOrderIdFilter] = useState<string>('');
@@ -107,6 +109,35 @@ const GoodsOut: React.FC = () => {
     setDateToFilter('');
     setCurrentPage(1);
     fetchSalesOrders();
+  };
+
+  const handleGenerateDispatchNote = async (goodsoutOrderId: number) => {
+    try {
+      setGeneratingDispatchNote(goodsoutOrderId);
+      
+      // Generate dispatch note
+      const response = await axios.get(`/api/goods-out/${goodsoutOrderId}/dispatch-note`, {
+        responseType: 'blob',
+        withCredentials: true
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `dispatch-note-${goodsoutOrderId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Error generating dispatch note:', err);
+      alert('Failed to generate dispatch note. Please try again later.');
+    } finally {
+      setGeneratingDispatchNote(null);
+    }
   };
 
   if (loading) {
@@ -244,6 +275,7 @@ const GoodsOut: React.FC = () => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Ref</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Company</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tracking No</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -268,11 +300,24 @@ const GoodsOut: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {order.tracking_no || '-'}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {order.goodsout_order_id ? (
+                              <button
+                                onClick={() => handleGenerateDispatchNote(order.goodsout_order_id!)}
+                                disabled={generatingDispatchNote === order.goodsout_order_id}
+                                className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+                              >
+                                {generatingDispatchNote === order.goodsout_order_id ? 'Generating...' : 'Dispatch Note'}
+                              </button>
+                            ) : (
+                              <span className="text-gray-500">Not Completed</span>
+                            )}
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                           No sales orders found
                         </td>
                       </tr>

@@ -1,9 +1,3 @@
 {
-  "/api/sales-orders/route": "app/api/sales-orders/route.js",
-  "/api/customers/route": "app/api/customers/route.js",
-  "/api/sales-orders/[id]/route": "app/api/sales-orders/[id]/route.js",
-  "/api/goods-out/route": "app/api/goods-out/route.js",
-  "/api/inventory/imei/[id]/route": "app/api/inventory/imei/[id]/route.js",
-  "/api/suppliers/route": "app/api/suppliers/route.js",
-  "/api/inventory/imei/route": "app/api/inventory/imei/route.js"
+  "/api/goods-out/[id]/dispatch-note/route": "app/api/goods-out/[id]/dispatch-note/route.js"
 }

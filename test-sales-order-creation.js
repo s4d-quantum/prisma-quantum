@@ -1,8 +1,8 @@
 const axios = require('axios');
 
-// Test data
+// Test data with existing customer
 const testData = {
-  customer_id: "CUST001",
+  customer_id: "CST-44", // Using existing customer from the API response
   items: [
     {
       item_brand: "Apple",

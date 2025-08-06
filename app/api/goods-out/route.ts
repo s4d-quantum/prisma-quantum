@@ -80,9 +80,27 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Combine sales order data with customer names
+    // Get goodsout_order_id from tbl_imei_sales_orders for each order
+    const salesOrderItems = await prisma.tbl_imei_sales_orders.findMany({
+      where: {
+        order_id: {
+          in: orderIds
+        }
+      },
+      select: {
+        order_id: true,
+        goodsout_order_id: true
+      }
+    });
+
+    // Create a map of order_id to goodsout_order_id
+    const goodsOutOrderMap = new Map(salesOrderItems.map(item => [item.order_id, item.goodsout_order_id]));
+
+    // Combine sales order data with customer names and goodsout_order_id
     const salesOrdersWithDetails = salesOrders.map(order => {
       const customer = customers.find(c => c.customer_id === order.customer_id);
+      const goodsout_order_id = goodsOutOrderMap.get(order.order_id) || null;
+      
       return {
         order_id: order.order_id,
         date: order.date,
@@ -90,7 +108,8 @@ export async function GET(request: NextRequest) {
         customer: customer?.name || null,
         customer_ref: order.customer_ref,
         delivery_company: order.delivery_company,
-        tracking_no: order.tracking_no
+        tracking_no: order.tracking_no,
+        goodsout_order_id: goodsout_order_id
       };
     });
 

@@ -31,6 +31,7 @@ const SalesOrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [generatingDispatchNote, setGeneratingDispatchNote] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -57,6 +58,40 @@ const SalesOrderDetail: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateDispatchNote = async () => {
+    if (!orderDetails || !orderDetails.goodsout_order_id) {
+      alert('Goods out order ID not found. Please complete the order first.');
+      return;
+    }
+
+    try {
+      setGeneratingDispatchNote(true);
+      
+      // Generate dispatch note
+      const response = await axios.get(`/api/goods-out/${orderDetails.goodsout_order_id}/dispatch-note`, {
+        responseType: 'blob',
+        withCredentials: true
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `dispatch-note-${orderDetails.goodsout_order_id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Error generating dispatch note:', err);
+      alert('Failed to generate dispatch note. Please try again later.');
+    } finally {
+      setGeneratingDispatchNote(false);
     }
   };
 
@@ -104,12 +139,23 @@ const SalesOrderDetail: React.FC = () => {
               <div className="bg-white shadow rounded-lg mb-6">
                 <div className="px-6 py-4 border-b flex justify-between items-center">
                   <h2 className="text-lg font-medium text-gray-800">Order Summary</h2>
-                  <button
-                    onClick={() => navigate('/sales-orders')}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                  >
-                    Back to Sales Orders
-                  </button>
+                  <div className="flex space-x-2">
+                    {orderDetails.goodsout_order_id && (
+                      <button
+                        onClick={handleGenerateDispatchNote}
+                        disabled={generatingDispatchNote}
+                        className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+                      >
+                        {generatingDispatchNote ? 'Generating...' : 'Generate Dispatch Note'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => navigate('/sales-orders')}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    >
+                      Back to Sales Orders
+                    </button>
+                  </div>
                 </div>
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
