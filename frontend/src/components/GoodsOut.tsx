@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import { useNavigate } from 'react-router-dom';
 
 interface SalesOrder {
+  // Goods Out main identifier = tbl_orders.order_id
   order_id: number;
   date: string;
   customer_id: string;
   customer: string; // Customer name
-  customer_ref: string;
-  delivery_company: string;
-  tracking_no: string;
-  goodsout_order_id: number | null;
+  customer_ref: string | null;
+  delivery_company: string | null;
+  tracking_no: string | null;
+  // Some rows may also carry a goodsout_order_id from tbl_imei_sales_orders; keep optional
+  goodsout_order_id?: number | null;
 }
 
 interface Customer {
@@ -38,6 +41,7 @@ const GoodsOut: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [generatingDispatchNote, setGeneratingDispatchNote] = useState<number | null>(null);
   
+  const navigate = useNavigate();
   // Filter states
   const [orderIdFilter, setOrderIdFilter] = useState<string>('');
   const [customerFilter, setCustomerFilter] = useState<string>('');
@@ -172,19 +176,8 @@ const GoodsOut: React.FC = () => {
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100">
           <div className="max-w-7xl mx-auto">
-            <div className="mb-6 flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">Goods Out</h1>
-                <p className="text-gray-600">Manage outgoing orders and customer deliveries</p>
-              </div>
-              <button
-                onClick={() => {
-                  window.location.href = "/sales-orders";
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                New Goods Out
-              </button>
+            <div className="mb-6">
+              <p className="text-gray-600 text-center">Manage outgoing orders and customer deliveries</p>
             </div>
 
             {/* Search and Filters */}
@@ -263,33 +256,42 @@ const GoodsOut: React.FC = () => {
             {/* Sales Orders Table */}
             <div className="bg-white shadow rounded-lg overflow-hidden">
               <div className="px-6 py-4 border-b">
-                <h2 className="text-lg font-medium text-gray-800">Sales Orders</h2>
+                <h2 className="text-lg font-medium text-gray-800">Goods Out</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Goods Out ID</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Ref</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Company</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tracking No</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {salesOrders.length > 0 ? (
                       salesOrders.map((order) => (
                         <tr key={order.order_id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {order.order_id}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            {/*
+                              Main identifier for Goods Out is tbl_orders.order_id.
+                              Make it clickable to navigate to detail.
+                            */}
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/goods-out/${order.order_id}`)}
+                              className="text-blue-600 hover:underline"
+                            >
+                              {order.order_id}
+                            </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {new Date(order.date).toLocaleDateString()}
+                            {order.date ? new Date(order.date).toLocaleDateString() : '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {order.customer || order.customer_id}
+                            {order.customer || order.customer_id || '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {order.customer_ref || '-'}
@@ -300,25 +302,12 @@ const GoodsOut: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {order.tracking_no || '-'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {order.goodsout_order_id ? (
-                              <button
-                                onClick={() => handleGenerateDispatchNote(order.goodsout_order_id!)}
-                                disabled={generatingDispatchNote === order.goodsout_order_id}
-                                className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-                              >
-                                {generatingDispatchNote === order.goodsout_order_id ? 'Generating...' : 'Dispatch Note'}
-                              </button>
-                            ) : (
-                              <span className="text-gray-500">Not Completed</span>
-                            )}
-                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
-                          No sales orders found
+                        <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                          No goods out orders found
                         </td>
                       </tr>
                     )}

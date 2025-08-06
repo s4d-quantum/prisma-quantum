@@ -1,19 +1,29 @@
 {
   "pages": {
-    "/api/sales-orders/[id]/route": [
+    "/api/inventory/imei/[id]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/sales-orders/[id]/route.js"
+      "static/chunks/app/api/inventory/imei/[id]/route.js"
+    ],
+    "/api/customers/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/customers/route.js"
+    ],
+    "/api/goods-out/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/goods-out/route.js"
     ],
     "/api/sales-orders/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/sales-orders/route.js"
     ],
-    "/api/customers/route": [
+    "/api/sales-orders/[id]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/customers/route.js"
+      "static/chunks/app/api/sales-orders/[id]/route.js"
     ],
     "/api/sales-orders/[id]/complete/route": [
       "static/chunks/webpack.js",
@@ -25,26 +35,31 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/goods-out/[id]/dispatch-note/route.js"
     ],
+    "/api/inventory/imei/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/inventory/imei/route.js"
+    ],
+    "/api/suppliers/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/suppliers/route.js"
+    ],
+    "/api/goods-in/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/goods-in/route.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/api/goods-out/route": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/goods-out/route.js"
-    ],
-    "/api/inventory/imei/instock/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/inventory/imei/instock/route.js"
-    ],
-    "/api/inventory/imei/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/inventory/imei/route.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

@@ -34,106 +34,101 @@ export async function GET(
   try {
     const { id } = await params;
     
-    // Always try IMEI lookup first, then fall back to ID lookup
-    let product = await prisma.tbl_imei.findFirst({
-      where: { item_imei: id }
-    });
+    // Try to find device in vw_device_overview view
+    const deviceResults: any = await prisma.$queryRaw`
+      SELECT *
+      FROM vw_device_overview
+      WHERE imei = ${id}
+    `;
+    
+    let device = deviceResults.length > 0 ? deviceResults[0] : null;
     
     // If not found by IMEI, try by database ID
-    if (!product) {
+    if (!device) {
       const numericId = parseInt(id);
       if (!isNaN(numericId)) {
-        product = await prisma.tbl_imei.findUnique({
+        // Fallback to original method for database ID lookup
+        let product = await prisma.tbl_imei.findUnique({
           where: { id: numericId }
         });
+        
+        if (product && product.item_imei) {
+          // Fetch data from the view using the IMEI
+          const deviceResults: any = await prisma.$queryRaw`
+            SELECT *
+            FROM vw_device_overview
+            WHERE imei = ${product.item_imei}
+          `;
+          
+          if (deviceResults.length > 0) {
+            device = deviceResults[0];
+          } else {
+            // If view doesn't have the data, fall back to original method
+            device = {
+              imei: product.item_imei,
+              color: product.item_color,
+              storage: product.item_gb,
+              purchaseId: product.purchase_id,
+              status: product.status,
+              statusText: getStatusText(product.status),
+              grade: product.item_grade,
+              gradeText: getGradeText(product.item_grade)
+            };
+          }
+        }
       }
     }
 
-    if (!product) {
+    if (!device) {
       return NextResponse.json(
         { error: "Device not found" },
         { status: 404 }
       );
     }
 
-    // Fetch manufacturer and model information from vw_tac using raw query
-    const manufacturerResults: any = await prisma.$queryRaw`
-      SELECT item_details, brand_title
-      FROM vw_tac
-      WHERE item_tac = ${product.item_tac}
-    `;
-    
-    const manufacturerInfo = manufacturerResults.length > 0 ? manufacturerResults[0] : null;
-    
-    // Fetch supplier information from vw_device_supplier using raw query
-    const supplierResults: any = await prisma.$queryRaw`
-      SELECT supplier_name, supplier_address, supplier_city, supplier_country, supplier_phone, supplier_email, supplier_vat
-      FROM vw_device_supplier
-      WHERE item_imei = ${product.item_imei}
-    `;
-    
-    const supplier = supplierResults.length > 0 ? supplierResults[0] : null;
-    
-    // Fetch purchase information from tbl_purchases
-    const purchase = await prisma.tbl_purchases.findFirst({
-      where: { item_imei: product.item_imei }
-    });
-    
-    // Fetch tray information if purchase has a tray_id using raw query
-    let trayInfo = null;
-    if (purchase && purchase.tray_id) {
-      const trayResults: any = await prisma.$queryRaw`
-        SELECT title
-        FROM tbl_trays
-        WHERE tray_id = ${purchase.tray_id}
-      `;
-      
-      trayInfo = trayResults.length > 0 ? trayResults[0] : null;
-    }
-    
     // Fetch movement logs from tbl_log
     const movements = await prisma.tbl_log.findMany({
-      where: { item_code: product.item_imei },
+      where: { item_code: device.imei || device.item_imei },
       orderBy: { date: 'desc' }
     });
 
     // Format the response with all required information
     const response = {
       device: {
-        imei: product.item_imei,
-        color: product.item_color || "N/A",
-        storage: product.item_gb || "N/A",
-        purchaseId: product.purchase_id,
-        status: product.status,
-        statusText: getStatusText(product.status),
-        grade: product.item_grade,
-        gradeText: getGradeText(product.item_grade)
+        imei: device.imei || device.item_imei,
+        color: device.color || "N/A",
+        storage: device.storage || "N/A",
+        purchaseId: device.purchase_order_id || device.purchaseId,
+        status: device.status === "In Stock" ? 1 : (device.status === "Out of Stock" ? 0 : device.status),
+        statusText: typeof device.status === 'string' ? device.status : getStatusText(device.status),
+        grade: device.grade || device.item_grade,
+        gradeText: device.gradeText || getGradeText(device.grade || device.item_grade)
       },
       manufacturerInfo: {
-        model: manufacturerInfo?.item_details || null,
-        brand: manufacturerInfo?.brand_title || null
+        model: device.model_no || null,
+        brand: device.manufacturer || null
       },
       supplier: {
-        name: supplier?.supplier_name || null,
-        address: supplier?.supplier_address || null,
-        city: supplier?.supplier_city || null,
-        country: supplier?.supplier_country || null,
-        phone: supplier?.supplier_phone || null,
-        email: supplier?.supplier_email || null,
-        vat: supplier?.supplier_vat || null
+        name: device.supplier || null,
+        address: null, // Not included in the view
+        city: null, // Not included in the view
+        country: null, // Not included in the view
+        phone: null, // Not included in the view
+        email: null, // Not included in the view
+        vat: null // Not included in the view
       },
-      purchase: purchase ? {
-        purchaseNumber: purchase.purchase_id,
-        date: purchase.date,
-        location: purchase.tray_id,
-        locationName: trayInfo?.title || null,
-        qcRequired: purchase.qc_required === 1,
-        qcCompleted: purchase.qc_completed === 1,
-        repairRequired: purchase.repair_required === 1,
-        repairCompleted: purchase.repair_completed === 1,
-        purchaseReturn: purchase.purchase_return === 1,
-        priority: purchase.priority,
-        comments: purchase.report_comment
+      purchase: (device.purchase_order_id || device.purchaseId) ? {
+        purchaseNumber: device.purchase_order_id || device.purchaseId,
+        date: null, // Not included in the view
+        location: null, // Not included in the view
+        locationName: null, // Not included in the view
+        qcRequired: device.qc_required === "Yes",
+        qcCompleted: device.qc_complete === "Yes",
+        repairRequired: device.repair_required === "Yes",
+        repairCompleted: device.repair_complete === "Yes",
+        purchaseReturn: null, // Not included in the view
+        priority: null, // Not included in the view
+        comments: null // Not included in the view
       } : null,
       movements: movements.map(log => ({
         id: log.id,
