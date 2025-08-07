@@ -1,0 +1,191 @@
+Here’s a clean, structured documentation of your MariaDB views and associated indexes, suitable for recreating the DB or sharing with your team:
+
+📘 S4D Database Views & Indexes Documentation
+
+🔍 Master View
+vw_device_overview
+Purpose: Unified device overview using item_imei as the key.
+Returns:
+imei – Device IMEI number
+
+
+manufacturer – Brand (from tbl_categories.title via tbl_tac.item_brand)
+
+
+model_no – TAC-based model detail
+
+
+color – Device color
+
+
+storage – Storage in GB
+
+
+grade – Mapped grade (A–F, or NA)
+
+
+status – Stock status (In Stock / Out of Stock)
+
+
+supplier – Supplier name
+
+
+goods_out_order_id – From tbl_orders
+
+
+sales_order_id – From tbl_imei_sales_orders
+
+
+purchase_order_id – From tbl_purchases
+
+
+qc_required, qc_complete, repair_required, repair_complete – Device processing flags (Yes/No)
+
+
+tray_id – Tray location of the device
+
+
+Underlying Joins: tbl_imei, tbl_tac, tbl_categories, tbl_purchases, tbl_suppliers, tbl_imei_sales_orders, tbl_orders
+
+📦 Chained Views Based on vw_device_overview
+vw_sales_order_devices
+Purpose: Devices linked to a sales order.
+ Filter: sales_order_id IS NOT NULL
+ Usage:
+SELECT * FROM vw_sales_order_devices WHERE sales_order_id = 123456;
+
+
+vw_purchase_order_devices
+Purpose: Devices included in a purchase.
+ Usage:
+SELECT * FROM vw_purchase_order_devices WHERE purchase_order_id = 654321;
+
+
+vw_goods_out_devices
+Purpose: Devices included in a goods-out dispatch.
+ Usage:
+SELECT * FROM vw_goods_out_devices WHERE goods_out_order_id = 987654;
+
+
+vw_device_counts_by_supplier
+Purpose: Count of devices per supplier.
+ Returns: supplier, total_devices
+
+vw_device_counts_by_purchase_order
+Purpose: Device counts by purchase order.
+ Returns: purchase_order_id, total_devices
+
+vw_device_counts_by_sales_order
+Purpose: Device counts by sales order.
+ Returns: sales_order_id, total_devices
+
+vw_device_counts_by_tray
+Purpose: Count of devices per tray.
+ Returns: tray_id, total_devices
+
+vw_device_status_summary
+Purpose: Summary count of stock status.
+ Returns: status, total_devices
+
+vw_device_counts_by_grade
+Purpose: Count of devices by grade.
+ Returns: grade, total_devices
+
+🧾 Supporting Views
+vw_device_supplier
+Purpose: Returns full supplier and purchase info for each device.
+Joins: tbl_imei, tbl_purchases, tbl_suppliers
+
+vw_tac
+Purpose: TAC-to-brand mapping with resolved brand title.
+Joins: tbl_tac, tbl_categories
+
+v_purchases_with_tac
+Purpose: Normalize TAC extraction from purchases.
+Returns:
+purchase_row_id, purchase_id, item_imei, supplier_id, tac8
+
+
+Note: Requires tac8 generated column:
+ALTER TABLE tbl_purchases ADD COLUMN tac8 VARCHAR(8) GENERATED ALWAYS AS (LEFT(item_imei, 8)) STORED;
+
+
+v_tac_brand
+Purpose: Map tac8 to item_brand
+ Returns: tac8, item_brand
+
+v_instock_imei
+Purpose: Filtered list of in-stock IMEIs
+ Returns: item_imei, item_tac, status (=1)
+
+v_suppliers
+Purpose: Supplier list for UI dropdowns
+ Returns: supplier_id, name
+
+v_manufacturers
+Purpose: Manufacturer list for UI
+ Returns: category_id, title
+
+v_instock_by_supplier_brand
+Purpose: Join in-stock IMEIs by supplier + brand
+ Joins: v_purchases_with_tac, v_tac_brand, v_instock_imei
+
+📈 Indexes
+tbl_purchases
+ALTER TABLE tbl_purchases ADD COLUMN tac8 VARCHAR(8) GENERATED ALWAYS AS (LEFT(item_imei, 8)) STORED;
+CREATE INDEX idx_purchases_supplier ON tbl_purchases (supplier_id);
+CREATE INDEX idx_purchases_item_imei ON tbl_purchases (item_imei);
+CREATE INDEX idx_purchases_tac8 ON tbl_purchases (tac8);
+
+
+tbl_tac
+CREATE INDEX idx_tac_item_tac ON tbl_tac (item_tac);
+CREATE INDEX idx_tac_item_brand ON tbl_tac (item_brand);
+
+
+tbl_imei
+CREATE INDEX idx_imei_item_imei ON tbl_imei (item_imei);
+CREATE INDEX idx_imei_status ON tbl_imei (status);
+-- Optional composite:
+CREATE INDEX idx_imei_status_imei ON tbl_imei (status, item_imei);
+
+
+tbl_categories
+CREATE INDEX idx_categories_category_id ON tbl_categories (category_id);
+CREATE INDEX idx_categories_title ON tbl_categories (title);
+
+
+tbl_suppliers
+CREATE INDEX idx_suppliers_supplier_id ON tbl_suppliers (supplier_id);
+
+
+tbl_orders
+CREATE INDEX idx_orders_item_imei ON tbl_orders (item_imei);
+
+
+tbl_imei_sales_orders
+CREATE INDEX idx_sales_orders_item_code ON tbl_imei_sales_orders (item_code);
+
+
+🔧 Post-Index Maintenance
+ANALYZE TABLE tbl_purchases, tbl_tac, tbl_imei, tbl_categories, tbl_suppliers;
+
+
+📝 Notes
+All aggregate views use vw_device_overview as their source.
+
+
+Views are chainable for flexible reporting.
+
+
+If tac8 cannot be generated, use LEFT(item_imei, 8) in views/queries.
+
+
+Optional: Replace grade mapping CASE with tbl_grades join if needed.
+
+
+
+Would you like this exported as a PDF or Markdown for documentation use?
+
+
+

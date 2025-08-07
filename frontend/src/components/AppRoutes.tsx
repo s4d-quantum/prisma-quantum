@@ -14,6 +14,7 @@ import NewSalesOrder from './NewSalesOrder';
 import SalesOrderDetail from './SalesOrderDetail';
 import GoodsOutScan from './GoodsOut/Scan';
 import GoodsOutDetail from './GoodsOut/Detail';
+import GoodsInBookIn from './GoodsIn/BookIn';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -31,6 +32,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/sales-orders/new" element={<NewSalesOrder />} />
       <Route path="/sales-orders/:id" element={<SalesOrderDetail />} />
       <Route path="/goods-out/scan/:orderId" element={<GoodsOutScan />} />
+      <Route path="/goods-in/book-in" element={<GoodsInBookIn />} />
       <Route path="/customers" element={<Customers />} />
       <Route path="/suppliers" element={<Suppliers />} />
       <Route path="/reports" element={<div>Reports Page</div>} />

@@ -1,0 +1,155 @@
+Here's a complete list of SQL queries to recreate all the views documented in your database. These are organized by function and include relevant comments.
+
+📌 View: vw_device_overview
+CREATE OR REPLACE VIEW vw_device_overview AS
+SELECT
+    imei.item_imei AS imei,
+    cat.title AS manufacturer,
+    tac.item_details AS model_no,
+    imei.item_color AS color,
+    imei.item_gb AS storage,
+    CASE
+        WHEN imei.item_grade = 1 THEN 'A'
+        WHEN imei.item_grade = 2 THEN 'B'
+        WHEN imei.item_grade = 3 THEN 'C'
+        WHEN imei.item_grade = 4 THEN 'D'
+        WHEN imei.item_grade = 5 THEN 'E'
+        WHEN imei.item_grade = 6 THEN 'F'
+        ELSE 'NA'
+    END AS grade,
+    CASE
+        WHEN imei.status = 1 THEN 'In Stock'
+        ELSE 'Out of Stock'
+    END AS status,
+    sup.name AS supplier,
+    ord.order_id AS goods_out_order_id,
+    so.order_id AS sales_order_id,
+    pur.purchase_id AS purchase_order_id,
+    CASE WHEN pur.qc_required = 1 THEN 'Yes' ELSE 'No' END AS qc_required,
+    CASE WHEN pur.qc_completed = 1 THEN 'Yes' ELSE 'No' END AS qc_complete,
+    CASE WHEN pur.repair_required = 1 THEN 'Yes' ELSE 'No' END AS repair_required,
+    CASE WHEN pur.repair_completed = 1 THEN 'Yes' ELSE 'No' END AS repair_complete,
+    pur.tray_id AS tray_id
+FROM tbl_imei AS imei
+LEFT JOIN tbl_tac AS tac ON tac.item_tac = imei.item_tac
+LEFT JOIN tbl_categories AS cat ON tac.item_brand = cat.category_id
+LEFT JOIN tbl_purchases AS pur ON pur.item_imei = imei.item_imei
+LEFT JOIN tbl_suppliers AS sup ON pur.supplier_id = sup.supplier_id
+LEFT JOIN tbl_imei_sales_orders AS so ON so.item_code = imei.item_imei
+LEFT JOIN tbl_orders AS ord ON ord.item_imei = imei.item_imei;
+
+
+🔄 Chained Views
+vw_sales_order_devices
+CREATE OR REPLACE VIEW vw_sales_order_devices AS
+SELECT * FROM vw_device_overview WHERE sales_order_id IS NOT NULL;
+
+vw_purchase_order_devices
+CREATE OR REPLACE VIEW vw_purchase_order_devices AS
+SELECT * FROM vw_device_overview WHERE purchase_order_id IS NOT NULL;
+
+vw_goods_out_devices
+CREATE OR REPLACE VIEW vw_goods_out_devices AS
+SELECT * FROM vw_device_overview WHERE goods_out_order_id IS NOT NULL;
+
+vw_device_counts_by_supplier
+CREATE OR REPLACE VIEW vw_device_counts_by_supplier AS
+SELECT supplier, COUNT(*) AS total_devices
+FROM vw_device_overview
+GROUP BY supplier;
+
+vw_device_counts_by_purchase_order
+CREATE OR REPLACE VIEW vw_device_counts_by_purchase_order AS
+SELECT purchase_order_id, COUNT(*) AS total_devices
+FROM vw_device_overview
+WHERE purchase_order_id IS NOT NULL
+GROUP BY purchase_order_id;
+
+vw_device_counts_by_sales_order
+CREATE OR REPLACE VIEW vw_device_counts_by_sales_order AS
+SELECT sales_order_id, COUNT(*) AS total_devices
+FROM vw_device_overview
+WHERE sales_order_id IS NOT NULL
+GROUP BY sales_order_id;
+
+vw_device_counts_by_tray
+CREATE OR REPLACE VIEW vw_device_counts_by_tray AS
+SELECT tray_id, COUNT(*) AS total_devices
+FROM vw_device_overview
+WHERE tray_id IS NOT NULL
+GROUP BY tray_id;
+
+vw_device_status_summary
+CREATE OR REPLACE VIEW vw_device_status_summary AS
+SELECT status, COUNT(*) AS total_devices
+FROM vw_device_overview
+GROUP BY status;
+
+vw_device_counts_by_grade
+CREATE OR REPLACE VIEW vw_device_counts_by_grade AS
+SELECT grade, COUNT(*) AS total_devices
+FROM vw_device_overview
+GROUP BY grade;
+
+
+🔧 Support Views
+vw_device_supplier
+CREATE OR REPLACE VIEW vw_device_supplier AS
+SELECT
+    i.id AS imei_row_id, i.item_imei, i.item_tac, i.item_color, i.item_grade, i.item_gb,
+    i.purchase_id AS imei_purchase_id, i.status AS imei_status, i.created_at AS imei_created_at,
+    p.id AS purchase_row_id, p.purchase_id AS purchase_number, p.date AS purchase_date,
+    p.item_imei AS purchase_item_imei, p.supplier_id AS supplier_code,
+    s.id AS supplier_row_id, s.supplier_id AS supplier_code_dup, s.name AS supplier_name,
+    s.address AS supplier_address, s.city AS supplier_city, s.country AS supplier_country,
+    s.phone AS supplier_phone, s.email AS supplier_email, s.vat AS supplier_vat
+FROM tbl_imei i
+LEFT JOIN tbl_purchases p ON p.item_imei = i.item_imei
+LEFT JOIN tbl_suppliers s ON s.supplier_id = p.supplier_id;
+
+vw_tac
+CREATE OR REPLACE VIEW vw_tac AS
+SELECT
+    t.item_tac, t.item_details, t.item_brand AS brand_code, c.title AS brand_title
+FROM tbl_tac t
+LEFT JOIN tbl_categories c ON c.category_id = t.item_brand;
+
+v_purchases_with_tac
+CREATE OR REPLACE VIEW v_purchases_with_tac AS
+SELECT
+    p.id AS purchase_row_id, p.purchase_id, p.item_imei, p.supplier_id, p.tac8
+FROM tbl_purchases p
+WHERE p.item_imei IS NOT NULL AND LENGTH(p.item_imei) >= 8;
+
+v_tac_brand
+CREATE OR REPLACE VIEW v_tac_brand AS
+SELECT t.item_tac AS tac8, t.item_brand
+FROM tbl_tac t;
+
+v_instock_imei
+CREATE OR REPLACE VIEW v_instock_imei AS
+SELECT i.item_imei, i.item_tac, i.status
+FROM tbl_imei i
+WHERE i.status = 1;
+
+v_suppliers
+CREATE OR REPLACE VIEW v_suppliers AS
+SELECT s.supplier_id, s.name
+FROM tbl_suppliers s;
+
+v_manufacturers
+CREATE OR REPLACE VIEW v_manufacturers AS
+SELECT c.category_id, c.title
+FROM tbl_categories c;
+
+v_instock_by_supplier_brand
+CREATE OR REPLACE VIEW v_instock_by_supplier_brand AS
+SELECT p.supplier_id, tb.item_brand, p.item_imei
+FROM v_purchases_with_tac p
+JOIN v_tac_brand tb ON tb.tac8 = p.tac8
+JOIN v_instock_imei ii ON ii.item_imei = p.item_imei;
+
+
+Would you like this list saved as a .sql file for batch execution or included in your PDF as an appendix?
+
+
