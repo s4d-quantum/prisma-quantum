@@ -200,6 +200,36 @@ const GoodsInBookIn: React.FC = () => {
       
       if (response.status === 201) {
         setScanStatus('Purchase order submitted successfully');
+        
+        // Automatically generate and download delivery note PDF
+        try {
+          // Get the purchase ID from the response
+          const purchaseId = response.data.purchaseId;
+          
+          if (purchaseId) {
+            // Generate delivery note
+            const pdfResponse = await axios.get(`/api/goods-in/${purchaseId}/delivery-note`, {
+              responseType: 'blob',
+              withCredentials: true
+            });
+            
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([pdfResponse.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `delivery-note-${purchaseId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            
+            // Clean up
+            link.parentNode?.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          }
+        } catch (pdfError) {
+          console.error('Error generating delivery note:', pdfError);
+          // Don't block the success message if PDF generation fails
+        }
+        
         // Clear the devices list after successful submission
         setDevices([]);
         // Optionally redirect to the detail page or show a success message

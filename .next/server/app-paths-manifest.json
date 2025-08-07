@@ -1,4 +1,3 @@
 {
-  "/api/suppliers/route": "app/api/suppliers/route.js",
-  "/api/inventory/imei/route": "app/api/inventory/imei/route.js"
+  "/api/goods-in/[purchaseId]/delivery-note/route": "app/api/goods-in/[purchaseId]/delivery-note/route.js"
 }

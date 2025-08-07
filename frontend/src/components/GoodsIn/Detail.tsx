@@ -38,6 +38,7 @@ const GoodsInDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [generatingDeliveryNote, setGeneratingDeliveryNote] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -107,6 +108,40 @@ const GoodsInDetail: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateDeliveryNote = async () => {
+    if (!purchaseOrder) {
+      alert('Purchase order not found.');
+      return;
+    }
+
+    try {
+      setGeneratingDeliveryNote(true);
+      
+      // Generate delivery note
+      const response = await axios.get(`/api/goods-in/${purchaseOrder.purchase_id}/delivery-note`, {
+        responseType: 'blob',
+        withCredentials: true
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `delivery-note-${purchaseOrder.purchase_id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Error generating delivery note:', err);
+      alert('Failed to generate delivery note. Please try again later.');
+    } finally {
+      setGeneratingDeliveryNote(false);
     }
   };
 
@@ -216,12 +251,23 @@ const GoodsInDetail: React.FC = () => {
                   <h1 className="text-2xl font-bold text-gray-900">Purchase Order Details</h1>
                   <p className="text-gray-600">View details for purchase order #{id}</p>
                 </div>
-                <button
-                  onClick={() => navigate('/goods-in')}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                >
-                  Back to Goods In
-                </button>
+                <div className="flex space-x-2">
+                  {purchaseOrder && (
+                    <button
+                      onClick={handleGenerateDeliveryNote}
+                      disabled={generatingDeliveryNote}
+                      className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+                    >
+                      {generatingDeliveryNote ? 'Generating...' : 'Generate Delivery Note'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => navigate('/goods-in')}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  >
+                    Back to Goods In
+                  </button>
+                </div>
               </div>
             </div>
 
