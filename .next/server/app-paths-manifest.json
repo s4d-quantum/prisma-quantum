@@ -1,3 +1,4 @@
 {
-  "/api/goods-in/[purchaseId]/delivery-note/route": "app/api/goods-in/[purchaseId]/delivery-note/route.js"
+  "/api/goods-in/route": "app/api/goods-in/route.js",
+  "/api/suppliers/route": "app/api/suppliers/route.js"
 }
