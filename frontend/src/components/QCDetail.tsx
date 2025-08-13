@@ -17,11 +17,32 @@ interface Device {
   comments: string;
 }
 
+interface EditableDevice extends Device {
+  editedColor: string;
+  editedGrade: string;
+  editedCosmetic: string;
+  editedFunctional: string;
+  editedComments: string;
+}
+
+interface PurchaseOrder {
+  id: number;
+  purchase_id: number;
+  date: string;
+  supplier: {
+    name: string;
+  } | null;
+  qc_completed: number;
+}
+
 const QCDetail: React.FC = () => {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<EditableDevice[]>([]);
+  const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [qcCompleted, setQcCompleted] = useState(false);
+  const [saving, setSaving] = useState(false);
   
   const navigate = useNavigate();
   const { purchaseId } = useParams<{ purchaseId: string }>();
@@ -39,7 +60,23 @@ const QCDetail: React.FC = () => {
         withCredentials: true
       });
       
-      setDevices(response.data.devices);
+      setPurchaseOrder(response.data.purchaseOrder);
+      
+      // Convert devices to editable format
+      const editableDevices = response.data.devices.map((device: Device) => ({
+        ...device,
+        editedColor: device.color || '',
+        editedGrade: device.grade || 'A',
+        editedCosmetic: device.cosmetic || 'Pending',
+        editedFunctional: device.functional || 'Pending',
+        editedComments: device.comments || ''
+      }));
+      
+      setDevices(editableDevices);
+      
+      // Set QC completion status from purchase order
+      setQcCompleted(response.data.purchaseOrder?.qc_completed === 1);
+      
       setError(null);
     } catch (err: any) {
       console.error('Error fetching devices:', err);
@@ -52,10 +89,10 @@ const QCDetail: React.FC = () => {
   const handleExportToExcel = () => {
     try {
       // Create CSV content
-      let csvContent = 'IMEI,Model/Details,Color,GB,Grade,Cosmetic,Functional,Fault,Spec,Comments\n';
+      let csvContent = 'IMEI,Model/Details,Color,GB,Grade,Cosmetic,Functional,Comments\n';
       
       devices.forEach((device) => {
-        csvContent += `${device.imei || ''},${device.model_no || ''},${device.color || ''},${device.storage || ''},${device.grade || ''},${device.cosmetic || ''},${device.functional || ''},${device.fault || ''},${device.spec || ''},${device.comments || ''}\n`;
+        csvContent += `${device.imei || ''},${device.model_no || ''},${device.color || ''},${device.storage || ''},${device.grade || ''},${device.cosmetic || ''},${device.functional || ''},${device.comments || ''}\n`;
       });
       
       // Create download link
@@ -71,6 +108,43 @@ const QCDetail: React.FC = () => {
     } catch (err: any) {
       console.error('Error exporting to Excel:', err);
       alert('Failed to export to Excel. Please try again later.');
+    }
+  };
+
+  const handleDeviceChange = (index: number, field: string, value: string) => {
+    const updatedDevices = [...devices];
+    updatedDevices[index] = { ...updatedDevices[index], [`edited${field}`]: value };
+    setDevices(updatedDevices);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setSaving(true);
+      
+      // Prepare data for submission
+      const submissionData = devices.map(device => ({
+        imei: device.imei,
+        color: device.editedColor,
+        grade: device.editedGrade,
+        cosmetic: device.editedCosmetic === 'Passed' ? 1 : device.editedCosmetic === 'Failed' ? 0 : null,
+        functional: device.editedFunctional === 'Passed' ? 1 : device.editedFunctional === 'Failed' ? 0 : null,
+        comments: device.editedComments
+      }));
+      
+      await axios.post(`/api/qc/purchases/${purchaseId}/update`, {
+        devices: submissionData,
+        qcCompleted
+      }, {
+        withCredentials: true
+      });
+      
+      // Redirect to main QC page
+      navigate('/qc');
+    } catch (err: any) {
+      console.error('Error submitting QC data:', err);
+      alert('Failed to submit QC data. Please try again later.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -113,11 +187,17 @@ const QCDetail: React.FC = () => {
               >
                 <span className="mr-2">←</span> Back to QC
               </button>
-              <div className="flex justify-between items-center">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-800">QC Details</h1>
-                  <p className="text-gray-600">Purchase Order ID: {purchaseId}</p>
-                </div>
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">QC Details</h1>
+                <p className="text-gray-600">Purchase Order ID: {purchaseId}</p>
+                {purchaseOrder && (
+                  <div className="mt-2 text-gray-600">
+                    <p>Date: {new Date(purchaseOrder.date).toLocaleDateString()}</p>
+                    <p>Supplier: {purchaseOrder.supplier?.name || 'N/A'}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-center">
                 <button
                   onClick={handleExportToExcel}
                   className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
@@ -143,8 +223,6 @@ const QCDetail: React.FC = () => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cosmetic</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Functional</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fault</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spec</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comments</th>
                     </tr>
                   </thead>
@@ -154,25 +232,99 @@ const QCDetail: React.FC = () => {
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.imei}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.model_no}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.color}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <input
+                              type="text"
+                              value={device.editedColor}
+                              onChange={(e) => handleDeviceChange(index, 'Color', e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.storage}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.grade}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.cosmetic}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.functional}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.fault}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.spec}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{device.comments}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <select
+                              value={device.editedGrade}
+                              onChange={(e) => handleDeviceChange(index, 'Grade', e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="A">A</option>
+                              <option value="B">B</option>
+                              <option value="C">C</option>
+                              <option value="D">D</option>
+                              <option value="E">E</option>
+                              <option value="F">F</option>
+                            </select>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <select
+                              value={device.editedCosmetic}
+                              onChange={(e) => handleDeviceChange(index, 'Cosmetic', e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Passed">Passed</option>
+                              <option value="Failed">Failed</option>
+                            </select>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <select
+                              value={device.editedFunctional}
+                              onChange={(e) => handleDeviceChange(index, 'Functional', e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Passed">Passed</option>
+                              <option value="Failed">Failed</option>
+                            </select>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <input
+                              type="text"
+                              value={device.editedComments}
+                              onChange={(e) => handleDeviceChange(index, 'Comments', e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={10} className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
                           No devices found
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            {/* QC Completion and Submit */}
+            <div className="mt-6 bg-white shadow rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="qcCompleted"
+                    checked={qcCompleted}
+                    onChange={(e) => setQcCompleted(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="qcCompleted" className="ml-2 block text-sm text-gray-900">
+                    Mark order as QC completed
+                  </label>
+                </div>
+                <button
+                  onClick={handleSubmit}
+                  disabled={saving}
+                  className={`px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    saving 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500'
+                  }`}
+                >
+                  {saving ? 'Saving...' : 'Submit QC Data'}
+                </button>
               </div>
             </div>
           </div>
