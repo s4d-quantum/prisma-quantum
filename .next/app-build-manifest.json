@@ -5,65 +5,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/dashboard/route.js"
     ],
-    "/api/sales-orders/route": [
+    "/api/qc/purchases/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/sales-orders/route.js"
+      "static/chunks/app/api/qc/purchases/route.js"
+    ],
+    "/api/qc/purchases/[purchaseId]/devices/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/qc/purchases/[purchaseId]/devices/route.js"
     ],
     "/api/suppliers/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/suppliers/route.js"
-    ],
-    "/api/goods-in/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/goods-in/route.js"
-    ],
-    "/api/customers/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/customers/route.js"
-    ],
-    "/api/goods-out/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/goods-out/route.js"
-    ],
-    "/api/trays/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/trays/route.js"
-    ],
-    "/api/tac/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/tac/route.js"
-    ],
-    "/api/goods-in/submit/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/goods-in/submit/route.js"
-    ],
-    "/api/inventory/imei/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/inventory/imei/route.js"
-    ],
-    "/api/goods-in/[purchaseId]/delivery-note/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/goods-in/[purchaseId]/delivery-note/route.js"
-    ],
-    "/api/purchases/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/purchases/route.js"
-    ],
-    "/api/inventory/imei/purchase/[id]/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/inventory/imei/purchase/[id]/route.js"
     ]
   }
 }

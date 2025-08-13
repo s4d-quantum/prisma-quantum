@@ -71,6 +71,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
             Goods Out
           </Link>
           
+          <Link
+            to="/qc"
+            className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 ${isActive('/qc') ? 'bg-blue-50 border-r-4 border-blue-500' : ''}`}
+          >
+            <span className="mr-3">🔍</span>
+            QC
+          </Link>
+          
           <div className="px-4 py-2 mt-6">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Management</p>
           </div>

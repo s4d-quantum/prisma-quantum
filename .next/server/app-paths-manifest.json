@@ -1,4 +1,6 @@
 {
-  "/api/goods-in/route": "app/api/goods-in/route.js",
-  "/api/suppliers/route": "app/api/suppliers/route.js"
+  "/api/qc/purchases/[purchaseId]/devices/route": "app/api/qc/purchases/[purchaseId]/devices/route.js",
+  "/api/dashboard/route": "app/api/dashboard/route.js",
+  "/api/suppliers/route": "app/api/suppliers/route.js",
+  "/api/qc/purchases/route": "app/api/qc/purchases/route.js"
 }

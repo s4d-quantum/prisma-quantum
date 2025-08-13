@@ -15,6 +15,8 @@ import SalesOrderDetail from './SalesOrderDetail';
 import GoodsOutScan from './GoodsOut/Scan';
 import GoodsOutDetail from './GoodsOut/Detail';
 import GoodsInBookIn from './GoodsIn/BookIn';
+import QC from './QC';
+import QCDetail from './QCDetail';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -36,6 +38,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/customers" element={<Customers />} />
       <Route path="/suppliers" element={<Suppliers />} />
       <Route path="/reports" element={<div>Reports Page</div>} />
+      <Route path="/qc" element={<QC />} />
+      <Route path="/qc/:purchaseId" element={<QCDetail />} />
       <Route path="*" element={<div>Page Not Found</div>} />
     </Routes>
   );
