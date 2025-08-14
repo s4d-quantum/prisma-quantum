@@ -72,7 +72,8 @@ export async function GET(
               status: product.status,
               statusText: getStatusText(product.status),
               grade: product.item_grade,
-              gradeText: getGradeText(product.item_grade)
+              gradeText: getGradeText(product.item_grade),
+              available_flag: "N/A"
             };
           }
         }
@@ -102,7 +103,8 @@ export async function GET(
         status: device.status === "In Stock" ? 1 : (device.status === "Out of Stock" ? 0 : device.status),
         statusText: typeof device.status === 'string' ? device.status : getStatusText(device.status),
         grade: device.grade || device.item_grade,
-        gradeText: device.gradeText || getGradeText(device.grade || device.item_grade)
+        gradeText: device.gradeText || getGradeText(device.grade || device.item_grade),
+        availableFlag: device.available_flag || "N/A"
       },
       manufacturerInfo: {
         model: device.model_no || null,
@@ -119,7 +121,7 @@ export async function GET(
       },
       purchase: (device.purchase_order_id || device.purchaseId) ? {
         purchaseNumber: device.purchase_order_id || device.purchaseId,
-        date: null, // Not included in the view
+        date: device.purchase_date || null,
         location: null, // Not included in the view
         locationName: null, // Not included in the view
         qcRequired: device.qc_required === "Yes",

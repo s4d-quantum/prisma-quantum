@@ -25,6 +25,7 @@ The endpoint fetches information from multiple tables and views:
 4. **tbl_purchases** - Purchase details
 5. **tbl_trays** - Location information
 6. **tbl_log** - Movement history
+7. **vw_device_overview** - Updated comprehensive device overview (as of 2025-08-14)
 
 ### Response Format
 
@@ -40,7 +41,8 @@ The API returns a JSON response with the following structure:
     "status": "number",
     "statusText": "string",
     "grade": "number",
-    "gradeText": "string"
+    "gradeText": "string",
+    "availableFlag": "string"
   },
   "manufacturerInfo": {
     "model": "string",
@@ -81,6 +83,16 @@ The API returns a JSON response with the following structure:
   ]
 }
 ```
+
+## Updated View Structure
+
+As of 2025-08-14, the `vw_device_overview` view has been updated with additional fields:
+
+- `purchase_date` - The date of the purchase
+- `item_cosmetic_passed` - Whether the device passed cosmetic QC
+- `item_functional_passed` - Whether the device passed functional QC
+- `available_flag` - Whether the device is available for sale ("Available" or "Not Available")
+- Enhanced logic for determining device availability based on QC status
 
 ## Testing
 
