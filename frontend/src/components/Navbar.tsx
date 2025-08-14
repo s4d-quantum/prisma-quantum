@@ -65,16 +65,18 @@ Detailed information for device ${imei}`;
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="hidden lg:block flex-1 text-center">
-              {isDeviceInfoPage ? (
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800">Device Information</h2>
-                  <p className="text-sm text-gray-600">Detailed information for device {location.pathname.split('/').pop()}</p>
-                </div>
-              ) : (
-                <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
-              )}
-            </div>
+          </div>
+          
+          {/* Centered page title */}
+          <div className="flex-1 flex items-center justify-center">
+            {isDeviceInfoPage ? (
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-gray-800">Device Information</h2>
+                <p className="text-sm text-gray-600">Detailed information for device {location.pathname.split('/').pop()}</p>
+              </div>
+            ) : (
+              <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
+            )}
           </div>
           
           <div className="flex items-center">

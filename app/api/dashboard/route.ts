@@ -36,7 +36,12 @@ export async function GET(request: NextRequest) {
       totalInToday,
       totalOutToday,
       devicesAwaitingQC,
-      recentGoodsInRaw
+      recentGoodsInRaw,
+      // New queries for updated dashboard
+      recentOperationsRaw,
+      availableStockCount,
+      pendingQCCount,
+      oldStockCount
     ] = await Promise.all([
       // Total IMEI products
       prisma.tbl_imei.count(),
@@ -115,7 +120,7 @@ export async function GET(request: NextRequest) {
       // Recent Goods In table: most recent purchases with supplier information
       // We need to get distinct purchases by grouping by purchase_id
       prisma.$queryRaw`
-        SELECT DISTINCT 
+        SELECT DISTINCT
           purchase_id,
           date,
           supplier_id,
@@ -124,6 +129,46 @@ export async function GET(request: NextRequest) {
         FROM tbl_purchases
         ORDER BY date DESC
         LIMIT 10
+      `,
+      
+      // Recent operations from tbl_log (last 3 operations)
+      prisma.$queryRaw`
+        SELECT
+          id,
+          date,
+          item_code,
+          subject,
+          details,
+          ref,
+          auto_time
+        FROM tbl_log
+        ORDER BY auto_time DESC
+        LIMIT 3
+      `,
+      
+      // Available Stock: devices with available_flag = 'Available'
+      prisma.$queryRaw`
+        SELECT COUNT(DISTINCT imei) as count
+        FROM vw_device_overview
+        WHERE available_flag = 'Available'
+      `,
+      
+      // Pending QC: devices with status=1 and qc_required=1 and qc_completed=0
+      prisma.$queryRaw`
+        SELECT COUNT(*) as count
+        FROM vw_device_overview
+        WHERE status = 'In Stock'
+          AND qc_required = 'Yes'
+          AND qc_complete = 'No'
+      `,
+      
+      // Old Stock (90+ days): devices with status=1 and purchase date > 90 days ago
+      prisma.$queryRaw`
+        SELECT COUNT(*) as count
+        FROM tbl_imei i
+        JOIN tbl_purchases p ON p.item_imei = i.item_imei
+        WHERE i.status = 1
+          AND DATEDIFF(CURDATE(), p.date) > 90
       `
     ]);
 
@@ -211,6 +256,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Process recent operations to convert from raw query result to objects
+    const recentOperations = Array.isArray(recentOperationsRaw)
+      ? recentOperationsRaw.map((item: any) => ({
+          id: item.id,
+          date: item.date,
+          item_code: item.item_code,
+          subject: item.subject,
+          details: item.details,
+          ref: item.ref,
+          auto_time: item.auto_time
+        }))
+      : [];
+
+    // Extract counts from the raw query results
+    const availableStock = Array.isArray(availableStockCount) && availableStockCount.length > 0
+      ? Number(availableStockCount[0].count)
+      : 0;
+      
+    const pendingQC = Array.isArray(pendingQCCount) && pendingQCCount.length > 0
+      ? Number(pendingQCCount[0].count)
+      : 0;
+      
+    const oldStock = Array.isArray(oldStockCount) && oldStockCount.length > 0
+      ? Number(oldStockCount[0].count)
+      : 0;
+
     // Format the response to match frontend expectations
     const response = {
       totalRevenue: 0, // You can calculate this from orders if needed
@@ -257,7 +328,12 @@ export async function GET(request: NextRequest) {
           qc_required: purchase.qc_required === 1 ? 'Yes' : 'No',
           quantity: quantity
         };
-      })
+      }),
+      // Updated dashboard data
+      recentOperations,
+      availableStock,
+      pendingQC,
+      oldStock
     };
 
     return NextResponse.json(response);

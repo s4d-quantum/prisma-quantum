@@ -17,8 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       <div className="flex flex-col h-full">
         {/* Sidebar header */}
         <div className="p-4 border-b">
-          <h1 className="text-xl font-bold text-gray-800">Inventory Manager</h1>
-          <p className="text-sm text-gray-600">Version 2.0</p>
+          <h1 className="text-xl font-bold text-gray-800">Quantum Plasma</h1>
         </div>
         
         {/* Sidebar navigation */}

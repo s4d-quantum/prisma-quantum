@@ -24,6 +24,18 @@ interface DashboardData {
     qc_required: string;
     quantity: number;
   }[];
+  recentOperations: {
+    id: number;
+    date: string;
+    item_code: string;
+    subject: string;
+    details: string;
+    ref: string;
+    auto_time: string;
+  }[];
+  availableStock: number;
+  pendingQC: number;
+  oldStock: number;
 }
 
 const Dashboard: React.FC = () => {
@@ -338,23 +350,62 @@ const Dashboard: React.FC = () => {
                       <span className="text-sm font-medium text-gray-700">{dashboardData?.imeiStock?.toLocaleString() || '0'}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className="bg-green-600 h-2.5 rounded-full" 
-                        style={{ 
-                          width: dashboardData?.imeiStock && dashboardData.totalProducts 
-                            ? `${Math.min(100, (dashboardData.imeiStock / dashboardData.totalProducts) * 100)}%` 
-                            : '0%' 
+                      <div
+                        className="bg-green-600 h-2.5 rounded-full"
+                        style={{
+                          width: dashboardData?.imeiStock && dashboardData.imeiStock > 0
+                            ? '100%'
+                            : '0%'
                         }}
                       ></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700">Total Products</span>
-                      <span className="text-sm font-medium text-gray-700">{dashboardData?.totalProducts?.toLocaleString() || '0'}</span>
+                      <span className="text-sm font-medium text-gray-700">Available Stock</span>
+                      <span className="text-sm font-medium text-gray-700">{dashboardData?.availableStock?.toLocaleString() || '0'}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '100%' }}></div>
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full"
+                        style={{
+                          width: dashboardData?.imeiStock && dashboardData.imeiStock > 0
+                            ? `${Math.min(100, (dashboardData.availableStock / dashboardData.imeiStock) * 100)}%`
+                            : '0%'
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-700">Pending QC</span>
+                      <span className="text-sm font-medium text-gray-700">{dashboardData?.pendingQC?.toLocaleString() || '0'}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-yellow-600 h-2.5 rounded-full"
+                        style={{
+                          width: dashboardData?.imeiStock && dashboardData.imeiStock > 0
+                            ? `${Math.min(100, (dashboardData.pendingQC / dashboardData.imeiStock) * 100)}%`
+                            : '0%'
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-700">Old Stock (90+ days)</span>
+                      <span className="text-sm font-medium text-gray-700">{dashboardData?.oldStock?.toLocaleString() || '0'}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-red-600 h-2.5 rounded-full"
+                        style={{
+                          width: dashboardData?.imeiStock && dashboardData.imeiStock > 0
+                            ? `${Math.min(100, (dashboardData.oldStock / dashboardData.imeiStock) * 100)}%`
+                            : '0%'
+                        }}
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -364,51 +415,32 @@ const Dashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
                 <div className="space-y-4">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+                  {dashboardData?.recentOperations && dashboardData.recentOperations.length > 0 ? (
+                    dashboardData.recentOperations.slice(0, 3).map((operation, index) => (
+                      <div key={operation.id} className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm font-medium text-gray-900">{operation.subject}</p>
+                          <p className="text-sm text-gray-500">
+                            {operation.details} - {operation.item_code}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(operation.auto_time).toLocaleString()}
+                          </p>
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-500">No recent activity</p>
                     </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">IMEI Stock Updated</p>
-                      <p className="text-sm text-gray-500">
-                        {dashboardData?.imeiStock?.toLocaleString() || '0'} devices currently in stock
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">New Devices Booked In</p>
-                      <p className="text-sm text-gray-500">
-                        {dashboardData?.totalInToday?.toLocaleString() || '0'} units added today
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">QC Pending</p>
-                      <p className="text-sm text-gray-500">
-                        {dashboardData?.devicesAwaitingQC?.toLocaleString() || '0'} devices awaiting QC
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
