@@ -1,4 +1,4 @@
-// File: /home/gascat/prismaquant/prisma-quantum/app/api/qc/purchases/[purchaseId]/devices/route.ts
+// File: /home/gascat/Downloads/prisma-quantum-main/app/api/qc/purchases/[purchaseId]/devices/route.ts
 import * as entry from '../../../../../../../../app/api/qc/purchases/[purchaseId]/devices/route.js'
 import type { NextRequest } from 'next/server.js'
 

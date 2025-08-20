@@ -1,4 +1,4 @@
-// File: /home/gascat/prismaquant/prisma-quantum/app/layout.tsx
+// File: /home/gascat/Downloads/prisma-quantum-main/app/layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

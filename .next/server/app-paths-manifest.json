@@ -1,3 +1,4 @@
 {
-  "/api/inventory/imei/[id]/route": "app/api/inventory/imei/[id]/route.js"
+  "/api/qc/purchases/route": "app/api/qc/purchases/route.js",
+  "/api/qc/purchases/[purchaseId]/devices/route": "app/api/qc/purchases/[purchaseId]/devices/route.js"
 }

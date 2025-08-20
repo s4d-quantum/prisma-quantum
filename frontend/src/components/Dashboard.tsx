@@ -55,31 +55,35 @@ const Dashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
+        setError(null);
         
         // Create AbortController for timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
         
         const response = await fetch('/api/dashboard', {
-          signal: controller.signal
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+          }
         });
         
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch dashboard data: ${response.statusText}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Failed to fetch dashboard data: ${response.statusText}`);
         }
         
         const data: DashboardData = await response.json();
         setDashboardData(data);
-        setError(null);
       } catch (err: any) {
         if (err.name === 'AbortError') {
           console.error('Dashboard data fetch timed out');
           setError('Request timed out. Please try again later.');
         } else {
           console.error('Error fetching dashboard data:', err);
-          setError('Failed to load dashboard data. Please try again later.');
+          setError(err.message || 'Failed to load dashboard data. Please try again later.');
         }
       } finally {
         setLoading(false);
@@ -153,6 +157,12 @@ const Dashboard: React.FC = () => {
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                 <strong className="font-bold">Error: </strong>
                 <span className="block sm:inline">{error}</span>
+                <button 
+                  className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </button>
               </div>
             </div>
           </main>
@@ -163,15 +173,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} />
-      
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Navbar */}
         <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-        
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100">
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -190,7 +194,6 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-white rounded-xl shadow-md overflow-hidden transform transition-transform duration-300 hover:scale-105">
                 <div className="p-6">
@@ -281,7 +284,6 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            {/* Recent Goods In Table */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-8">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Goods In</h2>
               <div className="overflow-x-auto">
@@ -338,9 +340,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Inventory Status Chart */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Inventory Status</h2>
                 <div className="space-y-4">
@@ -354,8 +354,8 @@ const Dashboard: React.FC = () => {
                         className="bg-green-600 h-2.5 rounded-full"
                         style={{
                           width: dashboardData?.imeiStock && dashboardData.imeiStock > 0
-                            ? '100%'
-                            : '0%'
+                            ? "100%"
+                            : "0%"
                         }}
                       ></div>
                     </div>
@@ -371,7 +371,7 @@ const Dashboard: React.FC = () => {
                         style={{
                           width: dashboardData?.imeiStock && dashboardData.imeiStock > 0
                             ? `${Math.min(100, (dashboardData.availableStock / dashboardData.imeiStock) * 100)}%`
-                            : '0%'
+                            : "0%"
                         }}
                       ></div>
                     </div>
@@ -387,7 +387,7 @@ const Dashboard: React.FC = () => {
                         style={{
                           width: dashboardData?.imeiStock && dashboardData.imeiStock > 0
                             ? `${Math.min(100, (dashboardData.pendingQC / dashboardData.imeiStock) * 100)}%`
-                            : '0%'
+                            : "0%"
                         }}
                       ></div>
                     </div>
@@ -403,7 +403,7 @@ const Dashboard: React.FC = () => {
                         style={{
                           width: dashboardData?.imeiStock && dashboardData.imeiStock > 0
                             ? `${Math.min(100, (dashboardData.oldStock / dashboardData.imeiStock) * 100)}%`
-                            : '0%'
+                            : "0%"
                         }}
                       ></div>
                     </div>
@@ -411,7 +411,6 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               
-              {/* Recent Activity */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
                 <div className="space-y-4">

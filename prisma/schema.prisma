@@ -25,6 +25,7 @@ model tbl_imei {
   @@index([item_tac, purchase_id, status], map: "idx_imei_tac_purchase_status")
   @@index([item_imei, item_tac, purchase_id, status], map: "item_imei")
   @@index([purchase_id], map: "idx_imei_purchase_id")
+  @@index([status, item_imei], map: "idx_imei_status_item_imei")
 }
 
 model tbl_serial_products {
@@ -330,6 +331,7 @@ model tbl_qc_imei_products {
 
   @@index([item_code, purchase_id, item_cosmetic_passed, item_functional_passed], map: "idx_qc_check")
   @@index([item_code, item_comments(length: 767), item_cosmetic_passed, item_functional_passed, item_flashed, user_id], map: "item_code")
+  @@index([item_code, purchase_id], map: "idx_qc_imei_item_code_purchase")
 }
 
 model tbl_qc_serial_products {

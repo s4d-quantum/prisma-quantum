@@ -1,5 +1,15 @@
 {
   "pages": {
+    "/api/suppliers/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/suppliers/route.js"
+    ],
+    "/api/goods-in/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/goods-in/route.js"
+    ],
     "/api/dashboard/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -10,26 +20,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/qc/purchases/route.js"
     ],
-    "/api/qc/purchases/[purchaseId]/devices/route": [
+    "/api/customers/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/qc/purchases/[purchaseId]/devices/route.js"
+      "static/chunks/app/api/customers/route.js"
     ],
-    "/api/suppliers/route": [
+    "/api/goods-out/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/suppliers/route.js"
+      "static/chunks/app/api/goods-out/route.js"
     ],
-    "/api/qc/purchases/[purchaseId]/update/route": [
+    "/api/sales-orders/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/qc/purchases/[purchaseId]/update/route.js"
-    ],
-    "/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/layout.css",
-      "static/chunks/app/layout.js"
+      "static/chunks/app/api/sales-orders/route.js"
     ],
     "/api/inventory/imei/route": [
       "static/chunks/webpack.js",
@@ -41,25 +45,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/inventory/imei/[id]/route.js"
     ],
-    "/api/goods-in/route": [
+    "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/goods-in/route.js"
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
     ],
-    "/api/sales-orders/route": [
+    "/api/qc/purchases/[purchaseId]/devices/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/sales-orders/route.js"
-    ],
-    "/api/customers/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/customers/route.js"
-    ],
-    "/api/goods-out/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/goods-out/route.js"
+      "static/chunks/app/api/qc/purchases/[purchaseId]/devices/route.js"
     ]
   }
 }

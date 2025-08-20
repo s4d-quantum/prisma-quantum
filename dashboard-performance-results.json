@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-08-19T16:01:21.651Z",
+  "testIterations": 10,
+  "results": [
+    4022,
+    3987,
+    3993,
+    4055,
+    3730,
+    3743,
+    4129,
+    5180,
+    3956,
+    3721
+  ],
+  "averageResponseTime": 4051.6,
+  "minResponseTime": 3721,
+  "maxResponseTime": 5180
+}
